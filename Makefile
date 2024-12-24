@@ -1,5 +1,4 @@
-CFLAGS=-lncurses -O3
-OBJS=main.o
+OBJS=main.o menu.o
 
 all: exec
 
@@ -7,7 +6,7 @@ run: exec
 	./exec
 
 exec: $(OBJS) Makefile
-	gcc $(OBJS) -o exec
+	gcc $(OBJS) -lncurses -o exec
 
 %.o: %.c Makefile
-	gcc -c -o $@ $< $(CFLAGS)
+	gcc -lncurses -c -o $@ $<
