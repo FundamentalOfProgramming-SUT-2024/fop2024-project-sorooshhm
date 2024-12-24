@@ -1,4 +1,4 @@
-OBJS=main.o menu.o
+OBJS=auth.o menu.o main.o 
 
 all: exec
 

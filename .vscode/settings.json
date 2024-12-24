@@ -3,6 +3,9 @@
     "files.associations": {
         "*.ejs": "html",
         "stdio.h": "c",
-        "ncurses.h": "c"
+        "ncurses.h": "c",
+        "stdlib.h": "c",
+        "stdbool.h": "c",
+        "signal.h": "c"
     }
 }
