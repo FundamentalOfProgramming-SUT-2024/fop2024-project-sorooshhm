@@ -1,2 +1,3 @@
-*.dev.json
+*.dev.db
 *.o
+db.txt

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 char isAuthorized()
@@ -18,6 +19,10 @@ char isAuthorized()
 
 int getUserId() {};
 
-void login() {};
+void login(char *username, char *password)
+{
+    char *name = "$$";
+   
+};
 
 void registerUser() {};

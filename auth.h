@@ -2,7 +2,7 @@
 
 typedef struct
 {
-    char *name;
+    unsigned long long int password;
     char *username;
     char *email;
     int games;
