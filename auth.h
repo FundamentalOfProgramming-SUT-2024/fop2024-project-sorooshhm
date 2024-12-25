@@ -11,7 +11,7 @@ typedef struct
     int gameplay;
 } User;
 
-bool isAuthorized();
+char isAuthorized();
 int getUserId();
 void login();
 void registerUser();

@@ -6,6 +6,8 @@
         "ncurses.h": "c",
         "stdlib.h": "c",
         "stdbool.h": "c",
-        "signal.h": "c"
+        "signal.h": "c",
+        "auth.h": "c",
+        "form.h": "c"
     }
 }

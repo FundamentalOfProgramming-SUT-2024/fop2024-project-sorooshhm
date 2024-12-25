@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdlib.h>
+#include "auth.h"
 
 char **createAuthMenu()
 {
@@ -7,15 +8,23 @@ char **createAuthMenu()
     menu[0] = "Login";
     menu[1] = "Register";
     menu[2] = "Guest";
-    return  menu;
+    return menu;
 }
 
-char **createPreStartMenu()
+char **createPreStartMenu( char check)
 {
-    char **menu = (char **)malloc(2 * sizeof(char *));
-    menu[0] = "Resume Last Game";
-    menu[1] = "Start New Game";
-    return  menu;
+    if (check == '1')
+    {
+        char **menu = (char **)malloc(2 * sizeof(char *));
+        menu[0] = "Resume Last Game";
+        menu[1] = "Start New Game";
+        return menu;
+    }
+    else {
+        char **menu = (char **)malloc(1 * sizeof(char *));
+        menu[0] = "Start New Game";
+        return menu;
+    }
 }
 
 WINDOW *creaetMenuWindow(int height, int width, int y, int x)
