@@ -24,9 +24,7 @@ char **handleInput(WINDOW *win, int count, char **headers, int parentY, int pare
         curs_set(true);
         wrefresh(win);
         move(parentY + y + 4 * state + 3, parentX + x + 2);
-        char s[10];
-        getstr(s);
-        result[state] = s;
+        getstr(result[state]);
     }
 
     return result;

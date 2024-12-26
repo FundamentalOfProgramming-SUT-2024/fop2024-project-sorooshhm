@@ -33,37 +33,37 @@ User *findUser(char *username)
     User *user = (User *)malloc(1 * sizeof(User));
     user->username = (char *)malloc(100 * sizeof(char));
     user->email = (char *)malloc(100 * sizeof(char));
-    char value[100];
     int key = 0;
     while (fgets(data, 100, db))
     {
+        data[strlen(data)-1] = '\0';
         if (key == 0)
         {
-            strcpy(user->username, value);
+            strcpy(user->username, data);
         }
         else if (key == 1)
         {
-            user->password = stringToNumber(value);
+            user->password = stringToNumber(data);
         }
         else if (key == 2)
         {
-            strcpy(user->email, value);
+            strcpy(user->email, data);
         }
         else if (key == 3)
         {
-            user->games = stringToNumber(value);
+            user->games = stringToNumber(data);
         }
         else if (key == 4)
         {
-            user->golds = stringToNumber(value);
+            user->golds = stringToNumber(data);
         }
         else if (key == 5)
         {
-            user->score = stringToNumber(value);
+            user->score = stringToNumber(data);
         }
         else if (key == 6)
         {
-            user->gameplay = stringToNumber(value);
+            user->gameplay = stringToNumber(data);
         }
         key++;
     }

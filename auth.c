@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "utils.h"
+#include "db.h"
 
 char isAuthorized()
 {
@@ -19,10 +21,25 @@ char isAuthorized()
 
 int getUserId() {};
 
-void login(char *username, char *password)
+User *login(char *username, char *password, char **message)
 {
-    char *name = "$$";
-   
+    User *user = findUser(username);
+    if (user == NULL)
+    {
+        *message = "Username is wrong";
+        return NULL;
+    }
+    if (hash(password) != user->password)
+    {
+        *message = "Password is wrong";
+        return NULL;
+    }
+    FILE *envFile = fopen(".env", "w");
+    char *content = "1\n";
+    strcat(content, username);
+    fputs(content, envFile);
+    fclose(envFile);
+    return user;
 };
 
 void registerUser() {};

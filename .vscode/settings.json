@@ -8,6 +8,18 @@
         "stdbool.h": "c",
         "signal.h": "c",
         "auth.h": "c",
-        "form.h": "c"
+        "form.h": "c",
+        "menu.h": "c",
+        "utils.h": "c",
+        "*.tcc": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "functional": "c",
+        "memory": "c",
+        "optional": "c",
+        "string_view": "c",
+        "string": "c",
+        "system_error": "c",
+        "ioctl.h": "c"
     }
 }

@@ -38,15 +38,34 @@ int main()
         // clear();
         refresh();
 
-        if (choice != 'G')
+        if (choice == 'L')
         {
-            WINDOW *formWin = creaetMenuWindow(20, maxX / 4, maxY / 2 - 15, maxX / 2 - 15);
-            char **headers = createHedares(choice);
-            wmove(formWin, 3, maxX / 2 - 15);
+            while (1)
+            {
 
-            char **result = handleInput(formWin, 2, headers, maxY / 2 - 15, maxX / 2 - 15);
-            // wclear(formWin);
-            // wrefresh(formWin);
+                WINDOW *formWin = creaetMenuWindow(20, maxX / 4, maxY / 2 - 15, maxX / 2 - 15);
+                char **headers = createHedares(choice);
+                wmove(formWin, 3, maxX / 2 - 15);
+
+                char **result = handleInput(formWin, 2, headers, maxY / 2 - 15, maxX / 2 - 15);
+                // wclear(formWin);
+                // wrefresh(formWin);
+
+                char **message = malloc(sizeof(char *));
+                User *user = login(result[0], result[1], message);
+                if (user == NULL)
+                {
+                    mvwprintw(formWin, 10, 4, *message);
+                    mvwprintw(formWin, 12, 4, "Press any key to continue ...");
+                    wrefresh(formWin);
+                    getchar();
+                    clear();
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
     }
     // create pre-start menu

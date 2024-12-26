@@ -13,5 +13,5 @@ typedef struct
 
 char isAuthorized();
 int getUserId();
-void login();
+User *login(char *, char *, char **);
 void registerUser();
