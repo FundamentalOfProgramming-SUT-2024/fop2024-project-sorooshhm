@@ -36,7 +36,7 @@ User *findUser(char *username)
     int key = 0;
     while (fgets(data, 100, db))
     {
-        data[strlen(data)-1] = '\0';
+        data[strlen(data) - 1] = '\0';
         if (key == 0)
         {
             strcpy(user->username, data);
@@ -69,6 +69,47 @@ User *findUser(char *username)
     }
 
     return user;
+}
+
+void insertUser(User *user)
+{
+    FILE *usernames = fopen("./users/usernames.db", "a");
+    fprintf(usernames,"\n%s" ,user->username);
+    fclose(usernames);
+    char address[100] = "./users/";
+
+    strcat(address, user->username);
+    strcat(address, ".db");
+    FILE *db = fopen(address, "w");
+    fprintf(db,"%s\n", user->username);
+    fprintf(db,"%lld\n", user->password);
+    fprintf(db,"%s\n", user->email);
+    fprintf(db,"%d\n", user->games);
+    fprintf(db,"%d\n", user->golds);
+    fprintf(db,"%d\n", user->score);
+    fprintf(db,"%d\n", user->gameplay);
+    fclose(db);
+}
+
+int userExixst(char *username)
+{
+    char *name = (char *)malloc(100 * sizeof(char));
+    FILE *usernames = fopen("./users/usernames.db", "r");
+    int check = 0;
+    while (fgets(name, 100, usernames))
+    {
+        if (strcmp(name, username) == 0)
+        {
+            check = 1;
+            break;
+        }
+    }
+    fclose(usernames);
+    if (check == 0)
+    {
+        return 0;
+    }
+    return 1;
 }
 
 // int main()

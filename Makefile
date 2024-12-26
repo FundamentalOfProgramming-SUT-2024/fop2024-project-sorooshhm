@@ -9,4 +9,4 @@ exec: $(OBJS) Makefile
 	gcc $(OBJS) -lncurses -o exec
 
 %.o: %.c Makefile
-	gcc -lncurses -c -o $@ $<
+	gcc -c -lncurses -o $@ $<

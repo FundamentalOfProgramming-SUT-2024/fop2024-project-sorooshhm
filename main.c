@@ -10,6 +10,7 @@ int main()
 {
     initscr();
     // noecho();
+    cbreak();
     int maxY, maxX;
     getmaxyx(stdscr, maxY, maxX);
     // check authorization for auth menu
@@ -24,7 +25,7 @@ int main()
         wrefresh(menuWin);
         wattroff(menuWin, A_BLINK);
 
-        mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------------");
+        mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
         wmove(menuWin, 3, 25);
 
         wrefresh(menuWin);
@@ -40,6 +41,7 @@ int main()
 
         if (choice == 'L')
         {
+            User *user = malloc(sizeof(User));
             while (1)
             {
 
@@ -48,14 +50,11 @@ int main()
                 wmove(formWin, 3, maxX / 2 - 15);
 
                 char **result = handleInput(formWin, 2, headers, maxY / 2 - 15, maxX / 2 - 15);
-                // wclear(formWin);
-                // wrefresh(formWin);
-
                 char **message = malloc(sizeof(char *));
-                User *user = login(result[0], result[1], message);
+                user = login(result[0], result[1], message);
                 if (user == NULL)
                 {
-                    mvwprintw(formWin, 10, 4, *message);
+                    mvwprintw(formWin, 10, 4, "%s", *message);
                     mvwprintw(formWin, 12, 4, "Press any key to continue ...");
                     wrefresh(formWin);
                     getchar();
@@ -63,13 +62,45 @@ int main()
                 }
                 else
                 {
+                    checkAuth = '1';
+                    clear();
+                    refresh();
+                    break;
+                }
+            }
+        }
+        else if (choice == 'R')
+        {
+            User *user = malloc(sizeof(User));
+            while (1)
+            {
+
+                WINDOW *formWin = creaetMenuWindow(30, maxX / 3 + 5, maxY / 2 - 15, maxX / 6 + 15);
+                char **headers = createHedares(choice);
+                wmove(formWin, 3, maxX / 2 - 15);
+                char **result = handleInput(formWin, 3, headers, maxY / 2 - 15, maxX / 6 + 15);
+                char **message = malloc(sizeof(char *));
+                user = registerUser(result[0], result[2], result[1], message);
+                if (user == NULL)
+                {
+                    mvwprintw(formWin, 25, 4, "%s", *message);
+                    mvwprintw(formWin, 27, 4, "Press any key to continue ...");
+                    wrefresh(formWin);
+                    getchar();
+                    clear();
+                }
+                else
+                {
+                    checkAuth = '1';
+                    clear();
+                    refresh();
                     break;
                 }
             }
         }
     }
     // create pre-start menu
-    else if (checkAuth == '1')
+    if (checkAuth == '1')
     {
         WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
         char **menu = createPreStartMenu(checkAuth);
@@ -78,7 +109,7 @@ int main()
         wrefresh(menuWin);
         wattroff(menuWin, A_BLINK);
 
-        mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------------");
+        mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
         wmove(menuWin, 3, 25);
 
         wrefresh(menuWin);

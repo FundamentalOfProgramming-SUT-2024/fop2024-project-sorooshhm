@@ -35,11 +35,36 @@ User *login(char *username, char *password, char **message)
         return NULL;
     }
     FILE *envFile = fopen(".env", "w");
-    char *content = "1\n";
+    char content[100] = "1\n";
     strcat(content, username);
-    fputs(content, envFile);
+    // printf("%s\n", content);
+    fprintf(envFile, content);
     fclose(envFile);
     return user;
 };
 
-void registerUser() {};
+User *registerUser(char *username, char *password, char *email, char **message)
+{
+    int check = userExixst(username);
+    if (check)
+    {
+        *message = "This username is taken";
+        return NULL;
+    }
+    User *user = (User *)malloc(sizeof(User));
+    user->username = username;
+    user->email = email;
+    user->password = hash(password);
+    user->games = 0;
+    user->golds = 0;
+    user->score = 0;
+    user->gameplay = 0;
+    insertUser(user);
+    FILE *envFile = fopen(".env", "w");
+    char content[100] = "1\n";
+    strcat(content, username);
+    // printf("%s\n", content);
+    fprintf(envFile, content);
+    fclose(envFile);
+    return user;
+};

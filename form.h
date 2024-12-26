@@ -13,7 +13,7 @@ char ** createHedares(char type){
         char ** headers = (char**) malloc(3*sizeof(char*));
         headers[0] = "Username";
         headers[1] = "Email";
-        headers[2] = "Password";
+        headers[2] = "Password (type RANDOM to use random password)";
         return  headers;
     }
 }
