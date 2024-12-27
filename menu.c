@@ -11,7 +11,7 @@ char **createAuthMenu()
     return menu;
 }
 
-char **createPreStartMenu( char check)
+char **createPreStartMenu(char check)
 {
     if (check == '1')
     {
@@ -25,11 +25,23 @@ char **createPreStartMenu( char check)
 
         return menu;
     }
-    else {
+    else
+    {
         char **menu = (char **)malloc(1 * sizeof(char *));
         menu[0] = "Start New Game";
         return menu;
     }
+}
+
+char **createSettingMenu()
+{
+    char **menu = (char **)malloc(5 * sizeof(char *));
+    menu[0] = "Color";
+    menu[1] = "Level";
+    menu[2] = "Music";
+
+
+    return menu;
 }
 
 WINDOW *creaetMenuWindow(int height, int width, int y, int x)
@@ -42,7 +54,7 @@ WINDOW *creaetMenuWindow(int height, int width, int y, int x)
     return win;
 }
 
-int handleMenuSelection(WINDOW *win, char **menu, int size)
+int handleMenuSelection(WINDOW *win, char **menu, int size , int withEsc)
 {
     keypad(win, true);
     int highlight = 0;
@@ -79,7 +91,10 @@ int handleMenuSelection(WINDOW *win, char **menu, int size)
         {
             break;
         }
+        else if(choice == 27 && withEsc){
+            highlight = -1;
+            break;
+        }
     }
     return highlight;
 }
-

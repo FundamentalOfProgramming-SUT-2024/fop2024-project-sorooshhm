@@ -1,6 +1,8 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include <time.h>
 #include <unistd.h>
 #include <unistd.h>
@@ -11,7 +13,8 @@
 User *user;
 int maxY, maxX;
 
-void preStartMenu(char type);
+int preStartMenu(char type);
+void playMusic(char *path);
 
 int main()
 {
@@ -37,7 +40,7 @@ int main()
         wmove(menuWin, 3, 25);
 
         wrefresh(menuWin);
-        int highlight = handleMenuSelection(menuWin, menu, 3);
+        int highlight = handleMenuSelection(menuWin, menu, 3, 0);
         char choice = menu[highlight][0];
         printw("You choose %s", menu[highlight]);
         refresh();
@@ -129,14 +132,19 @@ int main()
             refresh();
         }
     }
-        // create pre-start menu
-        preStartMenu(checkAuth);
+    // create pre-start menu
+    int choice = preStartMenu(checkAuth);
+    if (choice == 1)
+    {
+        playMusic(user->setting.music);
+        getchar();
+    }
     // getchar();
     endwin();
     return 0;
 }
 
-void preStartMenu(char type)
+int preStartMenu(char type)
 {
     while (1)
     {
@@ -154,7 +162,7 @@ void preStartMenu(char type)
             wmove(menuWin, 3, 25);
 
             wrefresh(menuWin);
-            int highlight = handleMenuSelection(menuWin, menu, 6);
+            int highlight = handleMenuSelection(menuWin, menu, 6, 0);
             printw("You choose %s", menu[highlight]);
             refresh();
             getchar();
@@ -167,12 +175,117 @@ void preStartMenu(char type)
             }
             else if (highlight == 1)
             {
+                return 1;
             }
             else if (highlight == 2)
             {
             }
             else if (highlight == 3)
             {
+                while (1)
+                {
+
+                    WINDOW *settingWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
+                    wattron(settingWin, A_BLINK);
+                    mvwprintw(settingWin, 1, 25, "Setting");
+                    wrefresh(settingWin);
+                    wattroff(settingWin, A_BLINK);
+
+                    mvwprintw(settingWin, 2, 1, "----------------------------------------------------------------------");
+                    wmove(settingWin, 3, maxX / 5);
+
+                    wrefresh(settingWin);
+                    char **menu = createSettingMenu();
+                    int highlight = handleMenuSelection(settingWin, menu, 3, 1);
+                    if (highlight == -1)
+                    {
+                        wclear(settingWin);
+                        free(menu);
+                        clear();
+                        refresh();
+                        break;
+                    }
+                    wclear(settingWin);
+                    wrefresh(settingWin);
+                    if (highlight == 0)
+                    {
+                        WINDOW *settingWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
+                        wattron(settingWin, A_BLINK);
+                        mvwprintw(settingWin, 1, 25, "Color");
+                        wrefresh(settingWin);
+                        wattroff(settingWin, A_BLINK);
+
+                        mvwprintw(settingWin, 2, 1, "----------------------------------------------------------------------");
+                        wmove(settingWin, 3, maxX / 5);
+
+                        wrefresh(settingWin);
+                        char **menu = malloc(3 * sizeof(char *));
+                        menu[0] = "White";
+                        menu[1] = "Blue";
+                        menu[2] = "Green";
+                        int choice = handleMenuSelection(settingWin, menu, 3, 0);
+                        user->setting.color = choice;
+                        wclear(settingWin);
+                        wrefresh(settingWin);
+                        free(menu);
+                    }
+                    else if (highlight == 1)
+                    {
+                        WINDOW *settingWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
+                        wattron(settingWin, A_BLINK);
+                        mvwprintw(settingWin, 1, 25, "Level");
+                        wrefresh(settingWin);
+                        wattroff(settingWin, A_BLINK);
+
+                        mvwprintw(settingWin, 2, 1, "----------------------------------------------------------------------");
+                        wmove(settingWin, 3, maxX / 5);
+
+                        wrefresh(settingWin);
+                        char **menu = malloc(3 * sizeof(char *));
+                        menu[0] = "Easy";
+                        menu[1] = "Medium";
+                        menu[2] = "Hard";
+                        int choice = handleMenuSelection(settingWin, menu, 3, 0);
+                        user->setting.level = choice;
+                        wclear(settingWin);
+                        wrefresh(settingWin);
+                        free(menu);
+                    }
+                    else if (highlight == 2)
+                    {
+                        WINDOW *settingWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
+                        wattron(settingWin, A_BLINK);
+                        mvwprintw(settingWin, 1, 25, "Music");
+                        wrefresh(settingWin);
+                        wattroff(settingWin, A_BLINK);
+
+                        mvwprintw(settingWin, 2, 1, "----------------------------------------------------------------------");
+                        wmove(settingWin, 3, maxX / 5);
+
+                        wrefresh(settingWin);
+                        char **menu = malloc(3 * sizeof(char *));
+                        menu[0] = "Fade to black";
+                        menu[1] = "Unforgiven I";
+                        menu[2] = "Back to black";
+                        int choice = handleMenuSelection(settingWin, menu, 3, 0);
+                        if (choice == 0)
+                        {
+                            user->setting.music = "./music/1.mp3";
+                        }
+                        if (choice == 1)
+                        {
+                            user->setting.music = "./music/2.mp3";
+                        }
+                        if (choice == 2)
+                        {
+                            user->setting.music = "./music/3.mp3";
+                        }
+                        wclear(settingWin);
+                        wrefresh(settingWin);
+                        free(menu);
+                    }
+                    usleep(200);
+                }
             }
             else if (highlight == 4)
             {
@@ -215,7 +328,7 @@ void preStartMenu(char type)
                 char **options = (char **)malloc(2 * sizeof(char *));
                 options[0] = "Yes";
                 options[1] = "No";
-                int highlight = handleMenuSelection(logoutWin, options, 2);
+                int highlight = handleMenuSelection(logoutWin, options, 2, 0);
                 if (highlight == 0)
                 {
                     logout();
@@ -249,10 +362,35 @@ void preStartMenu(char type)
             wmove(menuWin, 3, 25);
 
             wrefresh(menuWin);
-            int highlight = handleMenuSelection(menuWin, menu, 1);
+            int highlight = handleMenuSelection(menuWin, menu, 1, 0);
             printw("You choose %s", menu[highlight]);
             refresh();
         }
         usleep(500);
+    }
+}
+void playMusic(char *path)
+{
+    if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    {
+        printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+        return;
+    }
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        return;
+    }
+    Mix_Music *music = Mix_LoadMUS(path);
+    if (music == NULL)
+    {
+        printf("Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
+        return;
+    }
+    if (Mix_PlayMusic(music, -1) == -1)
+    {
+        printf("Failed to play music! SDL_mixer Error: %s\n", Mix_GetError());
+        Mix_FreeMusic(music);
+        return ;
     }
 }

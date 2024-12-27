@@ -6,7 +6,7 @@ run: exec
 	./exec
 
 exec: $(OBJS) Makefile
-	gcc $(OBJS) -lncurses -o exec
+	gcc $(OBJS) -lncurses -lSDL2 -lSDL2_mixer -o exec
 
 %.o: %.c Makefile
 	gcc -c -lncurses -o $@ $<

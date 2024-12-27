@@ -24,6 +24,9 @@ char isAuthorized(User **user)
         username[strlen(username) - 1] = '\0';
         *user = findUser(username);
         (*user)->isAuth = true;
+        (*user)->setting.color = 0;
+        (*user)->setting.level = 0;
+        (*user)->setting.music = "./music/1.mp3";
     }
     fclose(fptr);
     return isAuth;
@@ -51,6 +54,9 @@ User *login(char *username, char *password, char **message)
     fprintf(envFile, "%s\n", content);
     fclose(envFile);
     user->isAuth = true;
+    (user)->setting.color = 0;
+    (user)->setting.level = 0;
+    (user)->setting.music = "./music/1.mp3";
     return user;
 };
 
@@ -70,6 +76,9 @@ User *registerUser(char *username, char *password, char *email, char **message)
     user->golds = 0;
     user->score = 0;
     user->gameplay = 0;
+    (user)->setting.color = 0;
+    (user)->setting.level = 0;
+    (user)->setting.music = "./music/1.mp3";
     insertUser(user);
     FILE *envFile = fopen(".env", "w");
     char content[100] = "1\n";
@@ -84,7 +93,7 @@ User *registerUser(char *username, char *password, char *email, char **message)
 void logout()
 {
     FILE *envFile = fopen(".env", "w");
-    fprintf(envFile,"0");
+    fprintf(envFile, "0");
     fclose(envFile);
     return;
 }

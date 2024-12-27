@@ -1,5 +1,11 @@
 #include <stdbool.h>
 
+typedef struct {
+    int color;
+    int level;
+    char* music;
+} Setting;
+
 typedef struct
 {
     unsigned long long int password;
@@ -10,6 +16,7 @@ typedef struct
     int score;
     int gameplay;
     bool isAuth;
+    Setting setting;
 } User;
 
 char isAuthorized(User **);
