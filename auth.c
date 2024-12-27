@@ -1,11 +1,12 @@
 #include <stdbool.h>
+#include <ncurses.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "utils.h"
 #include "db.h"
 
-char isAuthorized()
+char isAuthorized(User **user)
 {
     FILE *fptr = fopen(".env", "r");
     if (fptr == NULL)
@@ -15,6 +16,15 @@ char isAuthorized()
     }
     char isAuth;
     isAuth = fgetc(fptr);
+    if (isAuth == '1')
+    {
+        fgetc(fptr);
+        char username[100];
+        fgets(username, 100, fptr);
+        username[strlen(username) - 1] = '\0';
+        *user = findUser(username);
+        (*user)->isAuth = true;
+    }
     fclose(fptr);
     return isAuth;
 };
@@ -38,8 +48,9 @@ User *login(char *username, char *password, char **message)
     char content[100] = "1\n";
     strcat(content, username);
     // printf("%s\n", content);
-    fprintf(envFile, content);
+    fprintf(envFile, "%s\n", content);
     fclose(envFile);
+    user->isAuth = true;
     return user;
 };
 
@@ -64,7 +75,16 @@ User *registerUser(char *username, char *password, char *email, char **message)
     char content[100] = "1\n";
     strcat(content, username);
     // printf("%s\n", content);
-    fprintf(envFile, content);
+    fprintf(envFile, "%s\n", content);
     fclose(envFile);
+    user->isAuth = true;
     return user;
 };
+
+void logout()
+{
+    FILE *envFile = fopen(".env", "w");
+    fprintf(envFile,"0");
+    fclose(envFile);
+    return;
+}

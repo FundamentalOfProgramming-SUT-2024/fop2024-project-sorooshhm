@@ -16,4 +16,9 @@ char ** createHedares(char type){
         headers[2] = "Password (type RANDOM to use random password)";
         return  headers;
     }
+    if(type == 'G'){
+         char ** headers = (char**) malloc(3*sizeof(char*));
+        headers[0] = "Username";
+        return  headers;
+    }
 }

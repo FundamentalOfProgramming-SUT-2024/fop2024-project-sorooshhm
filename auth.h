@@ -9,9 +9,11 @@ typedef struct
     int golds;
     int score;
     int gameplay;
+    bool isAuth;
 } User;
 
-char isAuthorized();
+char isAuthorized(User **);
 int getUserId();
 User *login(char *, char *, char **);
 User *registerUser(char *username, char *password, char *email, char **message);
+void logout();
