@@ -37,17 +37,17 @@ char *generateRadomPass(char *pass)
     {
         if (i == 2)
         {
-            char randomletter = 'A' + (random() % 26);
+            char randomletter = 'A' + (rand() % 26);
             pass[i] = randomletter;
         }
         else if (i == 4)
         {
-            char randomletter = 'a' + (random() % 26);
+            char randomletter = 'a' + (rand() % 26);
             pass[i] = randomletter;
         }
         else if (i == 6)
         {
-            char randomletter = '0' + (random() % 10);
+            char randomletter = '0' + (rand() % 10);
             pass[i] = randomletter;
         }
         else

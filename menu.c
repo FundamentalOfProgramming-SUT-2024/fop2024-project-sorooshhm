@@ -16,12 +16,13 @@ char **createPreStartMenu(char check)
     if (check == '1')
     {
         char **menu = (char **)malloc(5 * sizeof(char *));
-        menu[0] = "Resume Last Game";
-        menu[1] = "Start New Game";
+        menu[0] = "Start New Game";
+        menu[1] = "Resume Last Game";
         menu[2] = "Score Board";
         menu[3] = "Setting";
         menu[4] = "Profile";
         menu[5] = "Logout";
+        menu[6] = "Exit";
 
         return menu;
     }

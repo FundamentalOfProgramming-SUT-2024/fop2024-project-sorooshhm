@@ -8,13 +8,13 @@
 #include <unistd.h>
 #include "menu.h"
 #include "form.h"
-#include "auth.h"
+#include "game.h"
 
 User *user;
 int maxY, maxX;
 
 int preStartMenu(char type);
-void playMusic(char *path);
+Mix_Music *playMusic(char *path);
 
 int main()
 {
@@ -125,6 +125,10 @@ int main()
             char **result = handleInput(formWin, 1, headers, maxY / 2 - 15, maxX / 6 + 15);
             char **message = malloc(sizeof(char *));
             user->username = result[0];
+            user->isAuth = false;
+            (user)->setting.color = 0;
+            (user)->setting.level = 0;
+            (user)->setting.music = "./music/1.mp3";
             checkAuth = '2';
             wclear(formWin);
             free(headers);
@@ -133,11 +137,21 @@ int main()
         }
     }
     // create pre-start menu
-    int choice = preStartMenu(checkAuth);
-    if (choice == 1)
+    while (1)
     {
-        playMusic(user->setting.music);
-        getchar();
+        int choice = preStartMenu(checkAuth);
+        if (choice == 0)
+        {
+            Mix_Music *music = playMusic(user->setting.music);
+            startGame(user, music);
+            clear();
+            refresh();
+        }
+        else if (choice == 6)
+        {
+            break;
+        }
+        usleep(1000);
     }
     // getchar();
     endwin();
@@ -162,7 +176,7 @@ int preStartMenu(char type)
             wmove(menuWin, 3, 25);
 
             wrefresh(menuWin);
-            int highlight = handleMenuSelection(menuWin, menu, 6, 0);
+            int highlight = handleMenuSelection(menuWin, menu, 7, 0);
             printw("You choose %s", menu[highlight]);
             refresh();
             getchar();
@@ -172,6 +186,7 @@ int preStartMenu(char type)
             refresh();
             if (highlight == 0)
             {
+                return 0;
             }
             else if (highlight == 1)
             {
@@ -267,7 +282,8 @@ int preStartMenu(char type)
                         menu[0] = "Fade to black";
                         menu[1] = "Unforgiven I";
                         menu[2] = "Back to black";
-                        int choice = handleMenuSelection(settingWin, menu, 3, 0);
+                        menu[3] = "Shahre gham";
+                        int choice = handleMenuSelection(settingWin, menu, 4, 0);
                         if (choice == 0)
                         {
                             user->setting.music = "./music/1.mp3";
@@ -279,6 +295,10 @@ int preStartMenu(char type)
                         if (choice == 2)
                         {
                             user->setting.music = "./music/3.mp3";
+                        }
+                        if (choice == 3)
+                        {
+                            user->setting.music = "./music/4.mp3";
                         }
                         wclear(settingWin);
                         wrefresh(settingWin);
@@ -348,6 +368,10 @@ int preStartMenu(char type)
                     refresh();
                 }
             }
+            else if (highlight == 6)
+            {
+                return 6;
+            }
         }
         if (type == '2')
         {
@@ -365,32 +389,38 @@ int preStartMenu(char type)
             int highlight = handleMenuSelection(menuWin, menu, 1, 0);
             printw("You choose %s", menu[highlight]);
             refresh();
+            wclear(menuWin);
+            clear();
+            free(menu);
+            refresh();
+            return highlight;
         }
         usleep(500);
     }
 }
-void playMusic(char *path)
+Mix_Music *playMusic(char *path)
 {
     if (SDL_Init(SDL_INIT_AUDIO) < 0)
     {
         printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
-        return;
+        return NULL;
     }
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return;
+        return NULL;
     }
     Mix_Music *music = Mix_LoadMUS(path);
     if (music == NULL)
     {
         printf("Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
-        return;
+        return NULL;
     }
     if (Mix_PlayMusic(music, -1) == -1)
     {
         printf("Failed to play music! SDL_mixer Error: %s\n", Mix_GetError());
         Mix_FreeMusic(music);
-        return ;
+        return NULL;
     }
+    return music;
 }
