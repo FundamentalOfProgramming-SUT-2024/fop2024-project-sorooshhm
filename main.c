@@ -110,6 +110,7 @@ int main()
                     checkAuth = '1';
                     wclear(formWin);
                     free(headers);
+                    getchar();
                     clear();
                     refresh();
                     break;
