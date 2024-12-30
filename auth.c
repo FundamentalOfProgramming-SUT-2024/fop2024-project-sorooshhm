@@ -50,7 +50,6 @@ User *login(char *username, char *password, char **message)
     FILE *envFile = fopen(".env", "w");
     char content[100] = "1\n";
     strcat(content, username);
-    // printf("%s\n", content);
     fprintf(envFile, "%s\n", content);
     fclose(envFile);
     user->isAuth = true;
@@ -83,7 +82,6 @@ User *registerUser(char *username, char *password, char *email, char **message)
     FILE *envFile = fopen(".env", "w");
     char content[100] = "1\n";
     strcat(content, username);
-    // printf("%s\n", content);
     fprintf(envFile, "%s\n", content);
     fclose(envFile);
     user->isAuth = true;

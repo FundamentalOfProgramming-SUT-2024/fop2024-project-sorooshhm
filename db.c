@@ -17,7 +17,6 @@ User *findUser(char *username)
             break;
         }
     }
-    printf("%s", name);
     fclose(usernames);
     if (check == 0)
     {
@@ -112,11 +111,3 @@ int userExixst(char *username)
     }
     return 1;
 }
-
-// int main()
-// {
-//     User *soroosh = findUser("soroosh");
-//     printf("%d\n", soroosh == NULL);
-//     // printf("username %s email %s password %lld", soroosh->username, soroosh->email, soroosh->password);
-//     return 0;
-// }
