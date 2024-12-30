@@ -21,7 +21,7 @@ int main()
 
     initscr();
     // noecho();
-    user = malloc(sizeof(User));
+    user = (User*)malloc(sizeof(User));
     cbreak();
     getmaxyx(stdscr, maxY, maxX);
     // check authorization for auth menu
