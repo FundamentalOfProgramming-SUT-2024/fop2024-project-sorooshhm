@@ -31,41 +31,54 @@ extern int maxY, maxX;
 
 void createRoom(Room *room, int rangeX, int rangeY)
 {
-    int width = (rand() % 6) + 6;
+    int width = (rand() % 8) + 6;
     int height = (rand() % 6) + 4;
-    int x = (rand() % 49) + rangeX - width;
-    int y = (rand() % 18) + rangeY - height;
+    int x = (rand() % 41) + rangeX;
+    int y = (rand() % 18) + rangeY;
     if (x <= 0)
     {
         x = 2;
     }
-    if (x + width >= 144)
+    if (x + width >= rangeX + 41)
     {
-        x = 85;
+        x = rangeX + 41 - width;
+    }
+    if (x > 130)
+    {
+        x = 120;
     }
     if (y <= 4)
     {
         y = 6;
     }
-    if (y + height >= 40)
+    if (y + height >= rangeY + 17)
     {
-        y = 26;
+        y = rangeY + 17 - height;
     }
-    room->doors = (Door**)malloc(2*sizeof(Door*));
+    room->doors = (Door **)malloc(2 * sizeof(Door *));
     for (int i = 0; i < 2; i++)
     {
-        room->doors[i] = (Door*)malloc(sizeof(Door));
+        room->doors[i] = (Door *)malloc(sizeof(Door));
     }
-    
-    room->doors[0]->x = rand()%(width-1) + x;
-    room->doors[1]->x = rand()%(width-1) + x;
+
+    room->doors[0]->x = rand() % (width - 1) + x;
+    room->doors[1]->x = rand() % (width - 1) + x;
     room->doors[0]->y = y;
-    room->doors[1]->y = y + height -1;
-    
+    room->doors[1]->y = y + height;
+
     room->startX = x;
     room->startY = y;
     room->height = height;
     room->width = width;
+}
+
+void movePlayer(Player *player, int x, int y)
+{
+    mvprintw(player->y, player->x, ".");
+    player->x = x;
+    player->y = y;
+    mvprintw(player->y, player->x, "@");
+    refresh();
 }
 
 void startGame(User *user, Mix_Music *music)
@@ -73,9 +86,9 @@ void startGame(User *user, Mix_Music *music)
     srand(time(NULL));
     printf("%d , %d\n", maxX, maxY);
     noecho();
-
+    Player player;
     Room **rooms = (Room **)malloc(6 * sizeof(Room *));
-    int rangeX = 3, rangeY = 4;
+    int rangeX = 7, rangeY = 4;
     for (int i = 0; i < 6; i++)
     {
         rooms[i] = (Room *)malloc(sizeof(Room));
@@ -89,8 +102,8 @@ void startGame(User *user, Mix_Music *music)
 
         for (int j = x; j < x + width; j++)
         {
-            mvprintw(y, j, "--");
-            mvprintw(y + height - 1, j, "--");
+            mvprintw(y, j, "-");
+            mvprintw(y + height, j, "-");
             refresh();
         }
         for (int j = y + 1; j < y + height; j++)
@@ -99,23 +112,28 @@ void startGame(User *user, Mix_Music *music)
             mvprintw(j, x + width, "|");
             refresh();
 
-            for (int k = x + 1; k < x + width - 1; k++)
+            for (int k = x; k < x + width; k++)
             {
-                if (j == y + height - 1)
-                {
-                    continue;
-                }
-                mvprintw(j, k, ":");
+                mvprintw(j, k, ".");
             }
             refresh();
         }
         for (int j = 0; j < 2; j++)
         {
-            mvprintw(rooms[i]->doors[j]->y,rooms[i]->doors[j]->x , "+");
+            if (i == 0 && j == 0)
+            {
+                continue;
+            }
+            if(i == 5 && j == 1) continue;
+            mvprintw(rooms[i]->doors[j]->y, rooms[i]->doors[j]->x, "+");
         }
         refresh();
-        
     }
+    player.x = rooms[0]->startX + 1;
+    player.y = rooms[0]->startY + 1;
+    mvprintw(player.y, player.x, "@");
+    refresh();
+    keypad(stdscr, true);
     while (1)
     {
         char c = getchar();
@@ -123,6 +141,22 @@ void startGame(User *user, Mix_Music *music)
         {
             Mix_FreeMusic(music);
             break;
+        }
+        else if (c == 'w' || c == '8')
+        {
+            movePlayer(&player, player.x, player.y - 1);
+        }
+        else if (c == 's' || c == '2')
+        {
+            movePlayer(&player, player.x, player.y + 1);
+        }
+        else if (c == 'd' || c == '6')
+        {
+            movePlayer(&player, player.x + 1, player.y);
+        }
+        else if (c == 'a' || c == '4')
+        {
+            movePlayer(&player, player.x - 1, player.y);
         }
     }
     return;
