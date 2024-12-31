@@ -61,6 +61,8 @@ char *generateRadomPass(char *pass)
     return pass;
 }
 
+int randomNumber(int min, int max) { return min + rand() % (max - min + 1); }
+
 int isChar(char c)
 {
     return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
