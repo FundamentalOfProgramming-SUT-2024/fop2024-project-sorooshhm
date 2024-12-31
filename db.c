@@ -11,6 +11,7 @@ User *findUser(char *username)
     int check = 0;
     while (fgets(name, 100, usernames))
     {
+        name[strlen(name)-1] = '\0';
         if (strcmp(name, username) == 0)
         {
             check = 1;
