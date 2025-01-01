@@ -75,7 +75,7 @@ User *findUser(char *username)
 void insertUser(User *user)
 {
     FILE *usernames = fopen("./users/usernames.db", "a");
-    fprintf(usernames,"\n%s" ,user->username);
+    fprintf(usernames,"%s\n" ,user->username);
     fclose(usernames);
     char address[100] = "./users/";
 
