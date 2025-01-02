@@ -30,9 +30,15 @@ typedef struct
 typedef struct
 {
     Point cord;
+    char type; // 'n' -> normal 's' -> secret 'l' -> locked
+} Door;
+
+typedef struct
+{
+    Point cord;
     int height;
     int width;
-    Point *doors;
+    Door *doors;
     int doorCount;
     Point window;
     bool isVisible;
@@ -46,9 +52,26 @@ typedef struct
     int state; // 0 -> in passway ; 1 -> in room
     Room *room;
     Passway *passway;
+    int foodCount;
+    int level ;
 } Player;
 
-void handleMove(Player player, Room **rooms, Passway **passways, int roomsCount);
+typedef struct
+{
+    Room **rooms;
+    Passway **passways;
+    Player *player;
+    int roomsCount;
+    int level;
+} Level;
+
+typedef struct
+{
+    Level **levels;
+    int currentLevel;
+} Game;
+
+void handleMove(Level *);
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y);
 Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_X, int max_y);
 bool hasOverlap(Room a, Room b);
@@ -57,14 +80,21 @@ void printRoom(Room *room);
 int distance(Point a, Point b);
 bool isInRoom(Room *room, Point p);
 void createPassway(Passway **passway, Room **rooms, int roomCount);
+void showLevel(Level *level);
+void showPass(Passway *);
+void showPlayeInfo(Player player);
 
 extern int maxY,
     maxX;
 
+int mapMode = 0;
+WINDOW *mapWin;
+Game *game;
+
 void startGame(User *user, Mix_Music *music)
 {
     srand(time(NULL));
-    printf("%d , %d\n", maxX, maxY);
+    // printf("%d , %d\n", maxX, maxY);
     noecho();
 
     // initilizing rooms
@@ -108,13 +138,6 @@ void startGame(User *user, Mix_Music *music)
         }
         rooms[i]->index = i;
     }
-    for (int i = 0; i < roomsCounts; i++)
-    {
-        if (rooms[i]->isVisible)
-        {
-            printRoom(rooms[i]);
-        }
-    }
 
     // initializing passways
     Passway **passways = (Passway **)malloc((roomsCounts - 1) * sizeof(Passway *));
@@ -135,18 +158,67 @@ void startGame(User *user, Mix_Music *music)
     player.state = 1;
     player.room = rooms[0];
     player.passway = NULL;
+    player.health = 30;
+    player.foodCount = 0;
+    player.level = 0;
 
-    mvprintw(player.cord.y, player.cord.x, "@");
-    refresh();
+    // creating first Level
+    Level *firstLevel = (Level *)malloc(sizeof(Level));
+    firstLevel->level = 1;
+    firstLevel->rooms = rooms;
+    firstLevel->passways = passways;
+    firstLevel->player = &player;
+    firstLevel->roomsCount = roomsCounts;
+
+    // initilizing the game
+    game = (Game *)malloc(sizeof(Game));
+    game->levels = (Level **)malloc(4 * sizeof(Level *));
+    game->levels[0] = firstLevel;
+    game->currentLevel = 0;
+
+    // adding foods , traps , stairs 
+
+    showLevel(firstLevel);
+
     keypad(stdscr, true);
 
     // checking key pressing
-    handleMove(player, rooms, passways, roomsCounts);
+    handleMove(firstLevel);
 
     // breaking the game
     Mix_FreeMusic(music);
     return;
 };
+
+void showPlayeInfo(Player player){
+    mvprintw(1,maxX/2, "Level : %d   foodsCount : %d   health : %d" , player.level , player.foodCount , player.health);
+    refresh();
+}
+
+void showLevel(Level *level)
+{
+    // show rooms
+    for (int i = 0; i < level->roomsCount; i++)
+    {
+        if (level->rooms[i]->isVisible)
+        {
+            printRoom(level->rooms[i]);
+        }
+    }
+
+    // show passways
+    for (int i = 0; i < level->roomsCount - 1; i++)
+    {
+        showPass(level->passways[i]);
+    }
+
+    // show player
+    mvprintw(level->player->cord.y, level->player->cord.x, "@");
+
+    // show player info
+    showPlayeInfo(*level->player);
+    refresh();
+}
 
 bool hasOverlap(Room a, Room b)
 {
@@ -162,8 +234,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[0]->to = 1;
             passways[0]->count = 0;
             passways[0]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[0]->doors[0];
-            Point b = rooms[1]->doors[0];
+            Point a = rooms[0]->doors[0].cord;
+            Point b = rooms[1]->doors[0].cord;
             Point current = a;
             while (current.y != (maxY / 2) - 2)
             {
@@ -186,8 +258,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[1]->to = 1;
             passways[1]->count = 0;
             passways[1]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[1]->doors[1];
-            Point b = rooms[2]->doors[1];
+            Point a = rooms[1]->doors[1].cord;
+            Point b = rooms[2]->doors[1].cord;
             Point current = a;
             while (current.y != 4)
             {
@@ -210,8 +282,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[2]->to = 1;
             passways[2]->count = 0;
             passways[2]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[2]->doors[0];
-            Point b = rooms[3]->doors[1];
+            Point a = rooms[2]->doors[0].cord;
+            Point b = rooms[3]->doors[1].cord;
             Point current = a;
             while (current.y != maxY / 2)
             {
@@ -234,8 +306,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[3]->to = 1;
             passways[3]->count = 0;
             passways[3]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[3]->doors[0];
-            Point b = rooms[4]->doors[0];
+            Point a = rooms[3]->doors[0].cord;
+            Point b = rooms[4]->doors[0].cord;
             Point current = a;
             while (current.y != maxY - 2)
             {
@@ -258,8 +330,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[4]->to = 1;
             passways[4]->count = 0;
             passways[4]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[4]->doors[1];
-            Point b = rooms[5]->doors[0];
+            Point a = rooms[4]->doors[1].cord;
+            Point b = rooms[5]->doors[0].cord;
             Point current = a;
             while (current.y != maxY / 2 + 2)
             {
@@ -292,8 +364,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[0]->to = 1;
             passways[0]->count = 0;
             passways[0]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[0]->doors[0];
-            Point b = rooms[1]->doors[0];
+            Point a = rooms[0]->doors[0].cord;
+            Point b = rooms[1]->doors[0].cord;
             Point current = a;
             while (current.y != (maxY / 2) - 2)
             {
@@ -316,8 +388,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[1]->to = 1;
             passways[1]->count = 0;
             passways[1]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[1]->doors[1];
-            Point b = rooms[2]->doors[1];
+            Point a = rooms[1]->doors[1].cord;
+            Point b = rooms[2]->doors[1].cord;
             Point current = a;
             while (current.y != 4)
             {
@@ -340,8 +412,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[2]->to = 1;
             passways[2]->count = 0;
             passways[2]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[2]->doors[0];
-            Point b = rooms[3]->doors[0];
+            Point a = rooms[2]->doors[0].cord;
+            Point b = rooms[3]->doors[0].cord;
             Point current = a;
             while (current.y != maxY / 2 - 3)
             {
@@ -364,8 +436,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[3]->to = 1;
             passways[3]->count = 0;
             passways[3]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[3]->doors[1];
-            Point b = rooms[4]->doors[1];
+            Point a = rooms[3]->doors[1].cord;
+            Point b = rooms[4]->doors[1].cord;
             Point current = a;
             current.y -= 1;
             passways[3]->points[passways[3]->count++] = current;
@@ -395,8 +467,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[4]->to = 1;
             passways[4]->count = 0;
             passways[4]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[4]->doors[0];
-            Point b = rooms[5]->doors[0];
+            Point a = rooms[4]->doors[0].cord;
+            Point b = rooms[5]->doors[0].cord;
             Point current = a;
             while (current.y != maxY - 2)
             {
@@ -419,8 +491,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[5]->to = 1;
             passways[5]->count = 0;
             passways[5]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[5]->doors[1];
-            Point b = rooms[6]->doors[1];
+            Point a = rooms[5]->doors[1].cord;
+            Point b = rooms[6]->doors[1].cord;
             Point current = a;
             while (current.y != maxY / 2 + 2)
             {
@@ -443,8 +515,8 @@ void createPassway(Passway **passways, Room **rooms, int roomCount)
             passways[6]->to = 1;
             passways[6]->count = 0;
             passways[6]->points = (Point *)malloc(1000 * sizeof(Point));
-            Point a = rooms[6]->doors[0];
-            Point b = rooms[7]->doors[0];
+            Point a = rooms[6]->doors[0].cord;
+            Point b = rooms[7]->doors[0].cord;
             Point current = a;
             while (current.y != maxY - 2)
             {
@@ -472,9 +544,11 @@ int distance(Point a, Point b)
 
 void printDoors(Room *room)
 {
+    WINDOW *screen = mapMode ? mapWin : stdscr;
+
     for (int i = 0; i < room->doorCount; i++)
     {
-        mvprintw(room->doors[i].y, room->doors[i].x, "+");
+        mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
     }
 }
 
@@ -501,18 +575,18 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     } while (!validPlacement);
     room->isVisible = false;
     room->doorCount = 2;
-    room->doors = (Point *)malloc(sizeof(Point) * room->doorCount);
+    room->doors = (Door *)malloc(sizeof(Door) * room->doorCount);
     for (int i = 0; i < room->doorCount; i++)
     {
         if (i % 2 == 0)
         {
-            room->doors[i].x = room->cord.x + 1 + randomNumber(0, room->width - 2);
-            room->doors[i].y = room->cord.y + room->height - 1;
+            room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+            room->doors[i].cord.y = room->cord.y + room->height - 1;
         }
         else
         {
-            room->doors[i].x = room->cord.x + 1 + randomNumber(0, room->width - 2);
-            room->doors[i].y = room->cord.y + 1;
+            room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+            room->doors[i].cord.y = room->cord.y + 1;
         }
     }
     return room;
@@ -523,7 +597,7 @@ bool isInRoom(Room *room, Point p)
     return p.x >= room->cord.x && p.x <= (room->cord.x + room->width) && p.y >= room->cord.y && p.y <= (room->cord.y + room->height);
 }
 
-void handleMove(Player player, Room **rooms, Passway **passways, int roomsCount)
+void handleMove(Level *level)
 {
     while (1)
     {
@@ -534,30 +608,47 @@ void handleMove(Player player, Room **rooms, Passway **passways, int roomsCount)
         }
         else if (c == 'w' || c == '8')
         {
-            movePlayer(&player, rooms, passways, roomsCount, player.cord.x, player.cord.y - 1);
+            movePlayer(level->player, level->rooms, level->passways, level->roomsCount, level->player->cord.x, level->player->cord.y - 1);
         }
         else if (c == 's' || c == '2')
         {
-            movePlayer(&player, rooms, passways, roomsCount, player.cord.x, player.cord.y + 1);
+            movePlayer(level->player, level->rooms, level->passways, level->roomsCount, level->player->cord.x, level->player->cord.y + 1);
         }
         else if (c == 'd' || c == '6')
         {
-            movePlayer(&player, rooms, passways, roomsCount, player.cord.x + 1, player.cord.y);
+            movePlayer(level->player, level->rooms, level->passways, level->roomsCount, level->player->cord.x + 1, level->player->cord.y);
         }
         else if (c == 'a' || c == '4')
         {
-            movePlayer(&player, rooms, passways, roomsCount, player.cord.x - 1, player.cord.y);
+            movePlayer(level->player, level->rooms, level->passways, level->roomsCount, level->player->cord.x - 1, level->player->cord.y);
+        }
+        else if (c == 'm')
+        {
+
+            mapWin = newwin(maxY, maxX, 0, 0);
+            mvwprintw(mapWin, 1, 1, "Map Mode !!");
+            wrefresh(mapWin);
+            mapMode = 1;
+            for (int i = 0; i < level->roomsCount; i++)
+            {
+                printRoom(level->rooms[i]);
+            }
+            wrefresh(mapWin);
+            getchar();
+            wclear(mapWin);
+            wrefresh(mapWin);
+            mapMode = 0;
+            showLevel(level);
+            refresh();
         }
     }
 }
 
-void showPass(Player *player)
+void showPass(Passway *passway)
 {
-    mvprintw(1, 1, "hello %d", player->passway->visiblePoint);
-    refresh();
-    for (int i = 0; i < player->passway->visiblePoint; i++)
+    for (int i = 0; i < (passway->visiblePoint > passway->count ? passway->count : passway->visiblePoint); i++)
     {
-        mvprintw(player->passway->points[i].y, player->passway->points[i].x, "#");
+        mvprintw(passway->points[i].y, passway->points[i].x, "#");
     }
 }
 
@@ -582,25 +673,31 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         {
             player->passway = passways[0];
             player->passway->visiblePoint = 4;
-            showPass(player);
+            showPass(player->passway);
             player->passway->visiblePoint += 1;
         }
         else
         {
-            player->passway = passways[player->passway->index + 1];
-            player->passway->visiblePoint = 4;
-            showPass(player);
-            player->passway->visiblePoint += 1;
+            if (player->passway->index != roomsCount - 2)
+            {
+                player->passway = passways[player->passway->index + 1];
+                player->passway->visiblePoint = 4;
+                showPass(player->passway);
+                player->passway->visiblePoint += 1;
+            }
         }
         refresh();
     }
     if (c == '#')
     {
-        showPass(player);
+        showPass(player->passway);
         player->passway->visiblePoint += 1;
         if (player->passway->visiblePoint == player->passway->count)
         {
-            printRoom(rooms[player->room->index + 1]);
+            if (player->room->index != roomsCount - 1)
+            {
+                printRoom(rooms[player->room->index + 1]);
+            }
         }
     }
     if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
@@ -616,6 +713,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     if (index != -1)
     {
         player->room = rooms[index];
+        rooms[index]->isVisible = true;
         player->state = 1;
     }
 }
@@ -627,19 +725,20 @@ void printRoom(Room *room)
     y = room->cord.y;
     height = room->height;
     width = room->width;
+    WINDOW *screen = mapMode ? mapWin : stdscr;
     for (int j = x + 1; j < x + width; j++)
     {
-        mvprintw(y + 1, j, "-");
-        mvprintw(y + height - 1, j, "-");
+        mvwprintw(screen, y + 1, j, "-");
+        mvwprintw(screen, y + height - 1, j, "-");
     }
     for (int j = y + 2; j < y + height - 1; j++)
     {
-        mvprintw(j, x, "|");
-        mvprintw(j, x + width, "|");
+        mvwprintw(screen, j, x, "|");
+        mvwprintw(screen, j, x + width, "|");
 
         for (int k = x + 1; k < x + width; k++)
         {
-            mvprintw(j, k, ".");
+            mvwprintw(screen, j, k, ".");
         }
     }
     printDoors(room);
