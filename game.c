@@ -318,9 +318,9 @@ void *damagePlayer(void *args)
 
 void showPlayeInfo(Player player)
 {
-    mvprintw(1, maxX / 2, "                                          ");
+    mvprintw(1, maxX / 2, "                                                             ");
     refresh();
-    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level, player.foodCount, player.health);
+    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level +1, player.foodCount, player.health);
     refresh();
 }
 
