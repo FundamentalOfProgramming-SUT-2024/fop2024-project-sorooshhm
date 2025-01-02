@@ -48,8 +48,8 @@ typedef struct
     Passway *passway;
 } Player;
 
-void handleMove(Player player, Room **rooms, Passway **passways);
-void movePlayer(Player *player, Room **rooms, Passway **passways, int x, int y);
+void handleMove(Player player, Room **rooms, Passway **passways, int roomsCount);
+void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y);
 Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_X, int max_y);
 bool hasOverlap(Room a, Room b);
 void printDoors(Room *room);
@@ -134,13 +134,14 @@ void startGame(User *user, Mix_Music *music)
     player.cord.y = rooms[0]->cord.y + 2;
     player.state = 1;
     player.room = rooms[0];
+    player.passway = NULL;
 
     mvprintw(player.cord.y, player.cord.x, "@");
     refresh();
     keypad(stdscr, true);
 
     // checking key pressing
-    handleMove(player, rooms, passways);
+    handleMove(player, rooms, passways, roomsCounts);
 
     // breaking the game
     Mix_FreeMusic(music);
@@ -522,7 +523,7 @@ bool isInRoom(Room *room, Point p)
     return p.x >= room->cord.x && p.x <= (room->cord.x + room->width) && p.y >= room->cord.y && p.y <= (room->cord.y + room->height);
 }
 
-void handleMove(Player player, Room **rooms, Passway **passways)
+void handleMove(Player player, Room **rooms, Passway **passways, int roomsCount)
 {
     while (1)
     {
@@ -533,43 +534,73 @@ void handleMove(Player player, Room **rooms, Passway **passways)
         }
         else if (c == 'w' || c == '8')
         {
-            movePlayer(&player, rooms, passways, player.cord.x, player.cord.y - 1);
+            movePlayer(&player, rooms, passways, roomsCount, player.cord.x, player.cord.y - 1);
         }
         else if (c == 's' || c == '2')
         {
-            movePlayer(&player, rooms, passways, player.cord.x, player.cord.y + 1);
+            movePlayer(&player, rooms, passways, roomsCount, player.cord.x, player.cord.y + 1);
         }
         else if (c == 'd' || c == '6')
         {
-            movePlayer(&player, rooms, passways, player.cord.x + 1, player.cord.y);
+            movePlayer(&player, rooms, passways, roomsCount, player.cord.x + 1, player.cord.y);
         }
         else if (c == 'a' || c == '4')
         {
-            movePlayer(&player, rooms, passways, player.cord.x - 1, player.cord.y);
+            movePlayer(&player, rooms, passways, roomsCount, player.cord.x - 1, player.cord.y);
         }
     }
 }
 
 void showPass(Player *player)
 {
+    mvprintw(1, 1, "hello %d", player->passway->visiblePoint);
+    refresh();
     for (int i = 0; i < player->passway->visiblePoint; i++)
     {
         mvprintw(player->passway->points[i].y, player->passway->points[i].x, "#");
     }
-    player->passway->visiblePoint += 5;
 }
 
-void movePlayer(Player *player, Room **rooms, Passway **passways, int x, int y)
+int inRoom(Room **rooms, int roomsCount, Point p)
+{
+    for (int i = 0; i < roomsCount; i++)
+    {
+        if (isInRoom(rooms[i], p))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
     char c = mvinch(y, x);
     if (c == '+')
     {
-        mvprintw(1, 1, "hello %c", c);
         if (player->passway == NULL)
         {
             player->passway = passways[0];
-            player->passway->visiblePoint = 5;
+            player->passway->visiblePoint = 4;
             showPass(player);
+            player->passway->visiblePoint += 1;
+        }
+        else
+        {
+            player->passway = passways[player->passway->index + 1];
+            player->passway->visiblePoint = 4;
+            showPass(player);
+            player->passway->visiblePoint += 1;
+        }
+        refresh();
+    }
+    if (c == '#')
+    {
+        showPass(player);
+        player->passway->visiblePoint += 1;
+        if (player->passway->visiblePoint == player->passway->count)
+        {
+            printRoom(rooms[player->room->index + 1]);
         }
     }
     if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
@@ -580,6 +611,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int x, int y)
         player->cord.y = y;
         mvprintw(player->cord.y, player->cord.x, "@");
         refresh();
+    }
+    int index = inRoom(rooms, roomsCount, player->cord);
+    if (index != -1)
+    {
+        player->room = rooms[index];
+        player->state = 1;
     }
 }
 
