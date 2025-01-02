@@ -104,7 +104,7 @@ typedef struct
     int currentLevel;
 } Game;
 
-void handleMove(Level *);
+void handleMove();
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y);
 Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_X, int max_y);
 bool hasOverlap(Room a, Room b);
@@ -118,6 +118,8 @@ void showPass(Passway *);
 void showPlayeInfo(Player player);
 void *damagePlayer(void *player);
 void lose();
+void createLevel(Level *level, int);
+void changeLevel(Stair stair);
 
 extern int maxY,
     maxX;
@@ -134,6 +136,83 @@ void startGame(User *user, Mix_Music *music)
     // printf("%d , %d\n", maxX, maxY);
     noecho();
 
+    // initilizing the game
+    game = (Game *)malloc(sizeof(Game));
+    game->levels = (Level **)malloc(4 * sizeof(Level *));
+    for (int i = 0; i < 4; i++)
+    {
+        game->levels[i] = (Level *)malloc(sizeof(Level));
+        createLevel(game->levels[i], i);
+    }
+    game->currentLevel = 0;
+
+    // initialize player
+    player.cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
+    player.cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
+    player.state = 1;
+    player.room = game->levels[game->currentLevel]->rooms[0];
+    player.passway = NULL;
+    player.health = 30;
+    player.foodCount = 0;
+    player.level = 0;
+    player.name = user->username;
+    player.usedFood = (int *)calloc(50, sizeof(int));
+    player.foods = (Food **)malloc(40 * sizeof(Food));
+
+    showLevel(game->levels[game->currentLevel]);
+
+    keypad(stdscr, true);
+
+    // damage the player
+    pthread_t damageThread;
+    pthread_create(&damageThread, NULL, damagePlayer, NULL);
+    // pthread_join(damageThread, NULL);
+
+    // checking key pressing
+    handleMove(game->levels[game->currentLevel]);
+
+    // pthread_exit(NULL);
+
+    clear();
+    refresh();
+    // breaking the game
+    Mix_FreeMusic(music);
+    return;
+};
+
+void changeLevel(Stair stair)
+{
+    int sourceIndex = stair.from;
+    int destIndex = stair.to;
+    // printf("%d %d", sourceIndex , destIndex);
+    if (destIndex > sourceIndex)
+    {
+        game->currentLevel = destIndex;
+        player.cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
+        player.cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
+        player.room = game->levels[game->currentLevel]->rooms[0];
+        player.passway = NULL;
+        player.level = destIndex;
+        clear();
+        refresh();
+        showLevel(game->levels[game->currentLevel]);
+    }
+    else
+    {
+        game->currentLevel = destIndex;
+        player.cord.x = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.x + 2;
+        player.cord.y = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.y + 2;
+        player.room = game->levels[game->currentLevel]->rooms[0];
+        player.passway = game->levels[game->currentLevel]->passways[game->levels[game->currentLevel]->roomsCount-2];
+        player.level = destIndex;
+        clear();
+        refresh();
+        showLevel(game->levels[game->currentLevel]);
+    }
+}
+
+void createLevel(Level *level, int levelIndex)
+{
     // initilizing rooms
     int roomsCounts = randomNumber(6, 8);
     if (roomsCounts == 7)
@@ -188,33 +267,6 @@ void startGame(User *user, Mix_Music *music)
     createPassway(passways, rooms, roomsCounts);
     refresh();
 
-    // initialize player
-    player.cord.x = rooms[0]->cord.x + 2;
-    player.cord.y = rooms[0]->cord.y + 2;
-    player.state = 1;
-    player.room = rooms[0];
-    player.passway = NULL;
-    player.health = 30;
-    player.foodCount = 0;
-    player.level = 0;
-    player.name = user->username;
-    player.usedFood = (int *)calloc(50, sizeof(int));
-    player.foods = (Food **)malloc(40 * sizeof(Food));
-
-    // creating first Level
-    Level *firstLevel = (Level *)malloc(sizeof(Level));
-    firstLevel->level = 1;
-    firstLevel->rooms = rooms;
-    firstLevel->passways = passways;
-    firstLevel->player = &player;
-    firstLevel->roomsCount = roomsCounts;
-
-    // initilizing the game
-    game = (Game *)malloc(sizeof(Game));
-    game->levels = (Level **)malloc(4 * sizeof(Level *));
-    game->levels[0] = firstLevel;
-    game->currentLevel = 0;
-
     // adding foods , traps , stairs
     for (int i = 0; i < roomsCounts; i++)
     {
@@ -247,24 +299,29 @@ void startGame(User *user, Mix_Music *music)
                 rooms[i]->traps[j].isVisible = false;
             }
         }
+        if (i == 0 && levelIndex != 0)
+        {
+            rooms[i]->stairCount = 1;
+            rooms[i]->stair.cord.x = rooms[i]->cord.x + rooms[i]->width - 2;
+            rooms[i]->stair.cord.y = rooms[i]->cord.y + 2;
+            rooms[i]->stair.from = levelIndex;
+            rooms[i]->stair.to = levelIndex - 1;
+        }
+        if (i == roomsCounts - 1 && levelIndex != 3)
+        {
+            rooms[i]->stairCount = 1;
+            rooms[i]->stair.cord.x = rooms[i]->cord.x + rooms[i]->width - 2;
+            rooms[i]->stair.cord.y = rooms[i]->cord.y + 2;
+            rooms[i]->stair.from = levelIndex;
+            rooms[i]->stair.to = levelIndex + 1;
+        }
     }
-
-    showLevel(firstLevel);
-
-    keypad(stdscr, true);
-
-    // damage the player
-    pthread_t damageThread;
-    pthread_create(&damageThread, NULL, damagePlayer, NULL);
-    // pthread_join(damageThread, NULL);
-
-    // checking key pressing
-    handleMove(firstLevel);
-
-    // breaking the game
-    Mix_FreeMusic(music);
-    return;
-};
+    level->level = levelIndex;
+    level->rooms = rooms;
+    level->passways = passways;
+    level->roomsCount = roomsCounts;
+    level->player = &player;
+}
 
 void lose()
 {
@@ -280,7 +337,7 @@ void *damagePlayer(void *args)
 {
     while (1)
     {
-        sleep(2);
+        sleep(damageTime);
         (player).health -= 5;
         showPlayeInfo(player);
         if (player.health <= 0)
@@ -701,10 +758,11 @@ bool isInRoom(Room *room, Point p)
     return p.x > room->cord.x && p.x < (room->cord.x + room->width) && p.y > room->cord.y && p.y < (room->cord.y + room->height);
 }
 
-void handleMove(Level *level)
+void handleMove()
 {
     while (1)
     {
+        Level *level = game->levels[game->currentLevel];
         if (player.health <= 0)
         {
             lose();
@@ -822,9 +880,38 @@ Food findFood(Point p, Room *room)
     }
 }
 
+int isTrap(Room *room, Point p)
+{
+    for (int i = 0; i < room->trapCount; i++)
+    {
+        if (room->traps[i].cord.x == p.x && room->traps[i].cord.y == p.y && !room->traps[i].isVisible)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int trapMode = 0;
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
     char c = mvinch(y, x);
+    Point cur;
+    cur.x = x;
+    cur.y = y;
+    if (trapMode == 1)
+    {
+        mvprintw(player->cord.y, player->cord.x, "^");
+        refresh();
+        // trapMode = 0;
+    }
+    if (c == '>')
+    {
+        Stair stair = player->room->stair;
+        changeLevel(stair);
+        trapMode = 0;
+        return;
+    }
     if (c == '+')
     {
         if (player->passway == NULL)
@@ -860,9 +947,6 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (c == '$')
     {
-        Point cur;
-        cur.x = x;
-        cur.y = y;
         Food f = findFood(cur, player->room);
         player->foods[player->foodCount] = (Food *)malloc(sizeof(Food));
         player->foods[player->foodCount]->cord = f.cord;
@@ -878,14 +962,28 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
     {
-        mvprintw(player->cord.y, player->cord.x, c == '.' ? "." : c == '+' ? "."
-                                                                           : "#");
+        if (!trapMode)
+        {
+            mvprintw(player->cord.y, player->cord.x, c == '.' ? "." : c == '+' ? "."
+                                                                               : "#");
+        }
+        else
+        {
+            trapMode = 0;
+        }
         player->cord.x = x;
         player->cord.y = y;
         mvprintw(player->cord.y, player->cord.x, "@");
         refresh();
     }
-
+    int trapIndex = isTrap(player->room, cur);
+    if (trapIndex != -1)
+    {
+        player->room->traps[trapIndex].isVisible = true;
+        player->health -= 3;
+        trapMode = 1;
+        showPlayeInfo(*player);
+    }
     int index = inRoom(rooms, roomsCount, player->cord);
     if (index != -1)
     {
@@ -908,8 +1006,15 @@ void printTraps(Room *room)
 {
     for (int i = 0; i < room->trapCount; i++)
     {
-        mvprintw(room->traps[i].cord.y, room->traps[i].cord.x, "^");
+        if (room->traps[i].isVisible)
+            mvprintw(room->traps[i].cord.y, room->traps[i].cord.x, "^");
     }
+    refresh();
+}
+void printStair(Room *room)
+{
+    if (room->stairCount)
+        mvprintw(room->stair.cord.y, room->stair.cord.x, ">");
     refresh();
 }
 
@@ -939,5 +1044,6 @@ void printRoom(Room *room)
     printDoors(room);
     printFoods(room);
     printTraps(room);
+    printStair(room);
     refresh();
 }
