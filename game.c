@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include <unistd.h>
+#include <pthread.h>
 #include <time.h>
 #include "auth.h"
 #include "utils.h"
@@ -53,7 +55,8 @@ typedef struct
     Room *room;
     Passway *passway;
     int foodCount;
-    int level ;
+    int level;
+    char *name;
 } Player;
 
 typedef struct
@@ -83,13 +86,17 @@ void createPassway(Passway **passway, Room **rooms, int roomCount);
 void showLevel(Level *level);
 void showPass(Passway *);
 void showPlayeInfo(Player player);
+void *damagePlayer(void *player);
+void lose();
 
 extern int maxY,
     maxX;
 
 int mapMode = 0;
+int damageTime = 30;
 WINDOW *mapWin;
 Game *game;
+Player player;
 
 void startGame(User *user, Mix_Music *music)
 {
@@ -152,7 +159,6 @@ void startGame(User *user, Mix_Music *music)
     refresh();
 
     // initialize player
-    Player player;
     player.cord.x = rooms[0]->cord.x + 2;
     player.cord.y = rooms[0]->cord.y + 2;
     player.state = 1;
@@ -161,6 +167,7 @@ void startGame(User *user, Mix_Music *music)
     player.health = 30;
     player.foodCount = 0;
     player.level = 0;
+    player.name = user->username;
 
     // creating first Level
     Level *firstLevel = (Level *)malloc(sizeof(Level));
@@ -176,11 +183,16 @@ void startGame(User *user, Mix_Music *music)
     game->levels[0] = firstLevel;
     game->currentLevel = 0;
 
-    // adding foods , traps , stairs 
+    // adding foods , traps , stairs
 
     showLevel(firstLevel);
 
     keypad(stdscr, true);
+
+    // damage the player
+    pthread_t damageThread;
+    pthread_create(&damageThread, NULL, damagePlayer, NULL);
+    // pthread_join(damageThread, NULL);
 
     // checking key pressing
     handleMove(firstLevel);
@@ -190,8 +202,36 @@ void startGame(User *user, Mix_Music *music)
     return;
 };
 
-void showPlayeInfo(Player player){
-    mvprintw(1,maxX/2, "Level : %d   foodsCount : %d   health : %d" , player.level , player.foodCount , player.health);
+void lose()
+{
+    WINDOW *lostWin = newwin(maxY, maxX, 0, 0);
+    mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player.name);
+    wrefresh(lostWin);
+    sleep(5);
+    wclear(lostWin);
+    clear();
+}
+
+void *damagePlayer(void *args)
+{
+    while (1)
+    {
+        sleep(damageTime);
+        (player).health -= 5;
+        showPlayeInfo(player);
+        if (player.health == 0)
+        {
+            break;
+        }
+    }
+    pthread_exit(NULL);
+}
+
+void showPlayeInfo(Player player)
+{
+    mvprintw(1, maxX / 2, "                                          ");
+    refresh();
+    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level, player.foodCount, player.health);
     refresh();
 }
 
@@ -601,6 +641,11 @@ void handleMove(Level *level)
 {
     while (1)
     {
+        if (player.health == 0)
+        {
+            lose();
+            break;
+        }
         char c = getchar();
         if (c == 27)
         {
