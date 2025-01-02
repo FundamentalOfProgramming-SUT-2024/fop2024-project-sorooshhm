@@ -1,3 +1,5 @@
+#ifndef HEADER_H_AUTH
+#define HEADER_H_AUTH
 #include <stdbool.h>
 
 typedef struct {
@@ -24,3 +26,4 @@ int getUserId();
 User *login(char *, char *, char **);
 User *registerUser(char *username, char *password, char *email, char **message);
 void logout();
+#endif

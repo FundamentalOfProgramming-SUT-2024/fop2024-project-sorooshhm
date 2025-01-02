@@ -148,6 +148,13 @@ int main()
             clear();
             refresh();
         }
+        if (choice == 1)
+        {
+            Mix_Music *music = playMusic(user->setting.music);
+            resumeGame(user, music);
+            clear();
+            refresh();
+        }
         else if (choice == 6)
         {
             break;
