@@ -25,6 +25,8 @@ void printRoom(Room *room);
 int distance(Point a, Point b);
 bool isInRoom(Room *room, Point p);
 void createPassway(Passway **passway, Room **rooms, int roomCount);
+int inRoom(Room **rooms, int roomsCount, Point p);
+int inPassway(Passway **passways, int, Point p);
 void showLevel(Level *level);
 void showPass(Passway *);
 void showPlayeInfo(Player player);
@@ -40,7 +42,7 @@ int mapMode = 0;
 int damageTime = 30;
 WINDOW *mapWin;
 Game *game;
-Player player;
+Player *player;
 
 void startGame(User *user, Mix_Music *music)
 {
@@ -59,18 +61,19 @@ void startGame(User *user, Mix_Music *music)
     game->currentLevel = 0;
 
     // initialize player
-    player.cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
-    player.cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
-    player.state = 1;
-    player.room = game->levels[game->currentLevel]->rooms[0];
-    player.passway = NULL;
-    player.health = 30;
-    player.foodCount = 0;
-    player.level = 0;
-    player.name = user->username;
-    player.usedFood = (int *)calloc(50, sizeof(int));
-    player.foods = (Food **)malloc(40 * sizeof(Food));
-    game->player = &player;
+    player = (Player *)malloc(sizeof(Player));
+    player->cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
+    player->cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
+    player->state = 1;
+    player->room = game->levels[game->currentLevel]->rooms[0];
+    player->passway = NULL;
+    player->health = 30;
+    player->foodCount = 0;
+    player->level = 0;
+    player->name = user->username;
+    player->usedFood = (int *)calloc(50, sizeof(int));
+    player->foods = (Food **)malloc(40 * sizeof(Food));
+    game->player = player;
 
     showLevel(game->levels[game->currentLevel]);
 
@@ -94,25 +97,57 @@ void startGame(User *user, Mix_Music *music)
     return;
 };
 
+int inPassway(Passway **passways, int count, Point p)
+{
+    for (int i = 0; i < count; i++)
+    {
+        for (int j = 0; j < passways[i]->count; j++)
+        {
+            if (passways[i]->points[j].x == p.x && passways[i]->points[j].y == p.y)
+            {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
 void resumeGame(User *user, Mix_Music *music)
 {
+    game = (Game *)malloc(sizeof(Game));
     loadGame(game, user);
-    player.cord.x = (game->player)->cord.x;
-    player.cord.y = (game->player)->cord.y;
-    player.foodCount = (game->player)->foodCount;
-    player.foods = (game->player)->foods;
-    player.health = (game->player)->health;
-    player.level = (game->player)->level;
-    player.name = user->username;
-    player.passway = (game->player)->passway;
-    player.room = (game->player)->room;
-    player.state = (game->player)->state;
-    player.usedFood = (game->player)->usedFood;
-
-    for (int i = 0; i < game->currentLevel; i++)
+    int roomIndex = inRoom(game->levels[game->currentLevel]->rooms, game->levels[game->currentLevel]->roomsCount, game->player->cord);
+    if (roomIndex != -1)
     {
-        game->levels[i] = NULL;
+        game->player->room = game->levels[game->currentLevel]->rooms[roomIndex];
+        if (roomIndex != 0)
+        {
+            game->player->passway = game->levels[game->currentLevel]->passways[roomIndex - 1];
+        }
+        else
+        {
+            game->player->passway = NULL;
+        }
     }
+    else
+    {
+        int passwayIndex = inPassway(game->levels[game->currentLevel]->passways, game->levels[game->currentLevel]->roomsCount - 1, game->player->cord);
+        if (passwayIndex == -1)
+        {
+            game->player->passway = NULL;
+        }
+        else
+        {
+            game->player->room = game->levels[game->currentLevel]->rooms[passwayIndex];
+            game->player->passway = game->levels[game->currentLevel]->passways[passwayIndex];
+        }
+    }
+    game->player->level = game->currentLevel;
+    // mvprintw(1, 1, "passway index %d", game->player->passway->index);
+    // refresh();
+
+    player = game->player;
+
     for (int i = game->currentLevel + 1; i < 4; i++)
     {
         game->levels[i] = (Level *)malloc(sizeof(Level));
@@ -138,6 +173,7 @@ void resumeGame(User *user, Mix_Music *music)
     refresh();
     // breaking the game
     Mix_FreeMusic(music);
+    // pthread_join(damageThread, NULL);
     return;
 }
 
@@ -152,11 +188,11 @@ int changeLevel(Stair stair)
             return 0;
         }
         game->currentLevel = destIndex;
-        player.cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
-        player.cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
-        player.room = game->levels[game->currentLevel]->rooms[0];
-        player.passway = NULL;
-        player.level = destIndex;
+        player->cord.x = game->levels[game->currentLevel]->rooms[0]->cord.x + 2;
+        player->cord.y = game->levels[game->currentLevel]->rooms[0]->cord.y + 2;
+        player->room = game->levels[game->currentLevel]->rooms[0];
+        player->passway = NULL;
+        player->level = game->currentLevel;
         clear();
         refresh();
         showLevel(game->levels[game->currentLevel]);
@@ -168,11 +204,11 @@ int changeLevel(Stair stair)
             return 0;
         }
         game->currentLevel = destIndex;
-        player.cord.x = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.x + 2;
-        player.cord.y = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.y + 2;
-        player.room = game->levels[game->currentLevel]->rooms[0];
-        player.passway = game->levels[game->currentLevel]->passways[game->levels[game->currentLevel]->roomsCount - 2];
-        player.level = destIndex;
+        player->cord.x = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.x + 2;
+        player->cord.y = game->levels[game->currentLevel]->rooms[game->levels[game->currentLevel]->roomsCount - 1]->cord.y + 2;
+        player->room = game->levels[game->currentLevel]->rooms[0];
+        player->passway = game->levels[game->currentLevel]->passways[game->levels[game->currentLevel]->roomsCount - 2];
+        player->level = game->currentLevel;
         clear();
         refresh();
         showLevel(game->levels[game->currentLevel]);
@@ -294,7 +330,7 @@ void createLevel(Level *level, int levelIndex)
 void lose()
 {
     WINDOW *lostWin = newwin(maxY, maxX, 0, 0);
-    mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player.name);
+    mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player->name);
     wrefresh(lostWin);
     sleep(5);
     wclear(lostWin);
@@ -306,9 +342,9 @@ void *damagePlayer(void *args)
     while (1)
     {
         sleep(damageTime);
-        (player).health -= 5;
-        showPlayeInfo(player);
-        if (player.health <= 0)
+        (player)->health -= 5;
+        showPlayeInfo(*player);
+        if (player->health <= 0)
         {
             break;
         }
@@ -320,7 +356,7 @@ void showPlayeInfo(Player player)
 {
     mvprintw(1, maxX / 2, "                                                             ");
     refresh();
-    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level +1, player.foodCount, player.health);
+    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level + 1, player.foodCount, player.health);
     refresh();
 }
 
@@ -731,7 +767,7 @@ void handleMove()
     while (1)
     {
         Level *level = game->levels[game->currentLevel];
-        if (player.health <= 0)
+        if (player->health <= 0)
         {
             lose();
             break;
@@ -778,14 +814,14 @@ void handleMove()
         }
         else if (c == 'e')
         {
-            if (player.foodCount == 0)
+            if (player->foodCount == 0)
             {
                 continue;
             }
             WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
 
-            char **menu = (char **)malloc(player.foodCount * sizeof(char *));
-            for (int i = 0; i < player.foodCount; i++)
+            char **menu = (char **)malloc(player->foodCount * sizeof(char *));
+            for (int i = 0; i < player->foodCount; i++)
             {
                 // if (!player.usedFood[i])
                 // {
@@ -802,10 +838,10 @@ void handleMove()
             mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
             wmove(menuWin, 3, 25);
             wrefresh(menuWin);
-            int highlight = handleMenuSelection(menuWin, menu, player.foodCount, 0);
-            player.usedFood[highlight] = 1;
-            player.foodCount--;
-            player.health += player.foods[highlight]->health;
+            int highlight = handleMenuSelection(menuWin, menu, player->foodCount, 0);
+            player->usedFood[highlight] = 1;
+            player->foodCount--;
+            player->health += 3;
             getchar();
             wclear(menuWin);
             free(menu);
@@ -850,6 +886,8 @@ Food findFood(Point p, Room *room)
 
 int isTrap(Room *room, Point p)
 {
+    if (room == NULL)
+        return -1;
     for (int i = 0; i < room->trapCount; i++)
     {
         if (room->traps[i].cord.x == p.x && room->traps[i].cord.y == p.y && !room->traps[i].isVisible)
