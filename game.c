@@ -955,12 +955,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         // trapMode = 0;
     }
-    if (c == '△')
-    {
-        player->acientKey += 1;
-        player->room->keyCount = 0;
-        c = '.';
-    }
+    // if (c == '△')
+    // {
+    //     player->acientKey += 1;
+    //     player->room->keyCount = 0;
+    //     c = '.';
+    // }
     if (c == '@')
     {
         if (player->room->doors[0].password)
