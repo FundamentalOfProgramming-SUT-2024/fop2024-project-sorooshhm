@@ -134,6 +134,7 @@ void saveGame(Game *game, User *user)
         {
             Room *room = level->rooms[j];
             fwrite(&room->cord, sizeof(Point), 1, file);
+            fwrite(&room->keyCount, sizeof(Point), 1, file);
             fwrite(&room->height, sizeof(int), 1, file);
             fwrite(&room->width, sizeof(int), 1, file);
             fwrite(&room->doorCount, sizeof(int), 1, file);
@@ -171,6 +172,8 @@ void saveGame(Game *game, User *user)
         fwrite(&food->cord, sizeof(Point), 1, file);
     }
     fwrite(&player->level, sizeof(int), 1, file);
+    fwrite(&player->acientKey, sizeof(int), 1, file);
+    fwrite(&player->brokenAcientKey, sizeof(int), 1, file);
     fwrite(player->usedFood, sizeof(int), player->foodCount, file);
     fclose(file);
 }
@@ -198,6 +201,7 @@ void loadGame(Game *game, User *user)
         {
             Room *room = (Room *)malloc(sizeof(Room));
             fread(&room->cord, sizeof(Point), 1, file);
+            fread(&room->keyCount, sizeof(Point), 1, file);
             fread(&room->height, sizeof(int), 1, file);
             fread(&room->width, sizeof(int), 1, file);
             fread(&room->doorCount, sizeof(int), 1, file);
@@ -236,6 +240,8 @@ void loadGame(Game *game, User *user)
     fread(&player->state, sizeof(int), 1, file);
     fread(&player->foodCount, sizeof(int), 1, file);
     fread(&player->level, sizeof(int), 1, file);
+    fread(&player->acientKey, sizeof(int), 1, file);
+    fread(&player->brokenAcientKey, sizeof(int), 1, file);
     player->name = user->username;
     player->usedFood = (int *)malloc(sizeof(int) * 50);
     player->foods = (Food **)malloc(sizeof(Food *) * 40);

@@ -62,6 +62,7 @@ typedef struct
     Food *foods;
     Trap *traps;
     Stair stair;
+    int keyCount;
     int foodCount;
     int trapCount;
     int stairCount;
@@ -79,6 +80,8 @@ typedef struct
     int level;
     char *name;
     int *usedFood;
+    int acientKey;
+    int brokenAcientKey;
 } Player;
 
 typedef struct

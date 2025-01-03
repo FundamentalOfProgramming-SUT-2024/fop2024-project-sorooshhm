@@ -6,7 +6,7 @@ run: exec
 	./exec
 
 exec: $(OBJS) Makefile
-	gcc $(OBJS) -fsanitize=address -g -lncurses -lSDL2 -lSDL2_mixer -o exec
+	gcc $(OBJS) -fsanitize=address -g -lncursesw -lSDL2 -lSDL2_mixer -o exec
 
 %.o: %.c Makefile
-	gcc -c -lncurses -o $@ $<
+	gcc -c -lncursesw -o $@ $<

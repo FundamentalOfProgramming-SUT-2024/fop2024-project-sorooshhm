@@ -71,6 +71,8 @@ void startGame(User *user, Mix_Music *music)
     player->health = 30;
     player->foodCount = 0;
     player->level = 0;
+    player->acientKey = 0;
+    player->brokenAcientKey = 0;
     player->name = user->username;
     player->usedFood = (int *)calloc(50, sizeof(int));
     player->foods = (Food **)malloc(40 * sizeof(Food));
@@ -258,11 +260,13 @@ void createLevel(Level *level, int levelIndex)
         {
             rooms[0]->isVisible = true;
         }
-        if(i==roomsCounts-1){
+        if (i == roomsCounts - 1)
+        {
             rooms[i]->doors[0].type = 'n';
             rooms[i]->doors[1].type = 'n';
         }
         rooms[i]->index = i;
+        rooms[i]->keyCount = 0;
     }
 
     // initializing passways
@@ -326,6 +330,9 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->stair.to = levelIndex + 1;
         }
     }
+    int roomIndex = rand() % roomsCounts;
+    rooms[roomIndex]->keyCount = 1;
+
     level->level = levelIndex;
     level->rooms = rooms;
     level->passways = passways;
@@ -948,6 +955,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         // trapMode = 0;
     }
+    if (c == '△')
+    {
+        player->acientKey += 1;
+        player->room->keyCount = 0;
+        c = '.';
+    }
     if (c == '@')
     {
         if (player->room->doors[0].password)
@@ -1198,5 +1211,9 @@ void printRoom(Room *room)
     printFoods(room);
     printTraps(room);
     printStair(room);
+    if (room->keyCount)
+    {
+        mvprintw(room->cord.y + height - 3, room->cord.x + width - 1, "△");
+    }
     refresh();
 }
