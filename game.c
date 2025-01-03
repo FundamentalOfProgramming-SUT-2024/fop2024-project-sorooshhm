@@ -6,9 +6,10 @@
 #include <pthread.h>
 #include <time.h>
 #include "auth.h"
-#include "menu.h"
 #include "utils.h"
 #include "game.h"
+#include "menu.h"
+#include "form.h"
 #include "db.h"
 
 #define MAX_HEIGHT 10
@@ -710,10 +711,21 @@ int distance(Point a, Point b)
 void printDoors(Room *room)
 {
     WINDOW *screen = mapMode ? mapWin : stdscr;
-
     for (int i = 0; i < room->doorCount; i++)
     {
-        mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
+        if (room->doors[i].type != 'l')
+        {
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
+        }
+        else
+        {
+            attron(COLOR_PAIR(1));
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
+            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            attroff(COLOR_PAIR(2));
+        }
     }
 }
 
@@ -741,17 +753,38 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     room->isVisible = false;
     room->doorCount = 2;
     room->doors = (Door *)malloc(sizeof(Door) * room->doorCount);
+    int num = rand();
     for (int i = 0; i < room->doorCount; i++)
     {
-        if (i % 2 == 0)
+        if (num % 5 == 3)
         {
-            room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
-            room->doors[i].cord.y = room->cord.y + room->height - 1;
+            if (i % 2 == 0)
+            {
+                room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+                room->doors[i].cord.y = room->cord.y + room->height - 1;
+            }
+            else
+            {
+                room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+                room->doors[i].cord.y = room->cord.y + 1;
+            }
+            room->doors[i].type = 'l';
+            room->doors[i].password = 0;
         }
         else
         {
-            room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
-            room->doors[i].cord.y = room->cord.y + 1;
+            if (i % 2 == 0)
+            {
+                room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+                room->doors[i].cord.y = room->cord.y + room->height - 1;
+                room->doors[i].type = 'n';
+            }
+            else
+            {
+                room->doors[i].cord.x = room->cord.x + 1 + randomNumber(0, room->width - 2);
+                room->doors[i].cord.y = room->cord.y + 1;
+                room->doors[i].type = 'n';
+            }
         }
     }
     return room;
@@ -910,6 +943,84 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         mvprintw(player->cord.y, player->cord.x, "^");
         refresh();
         // trapMode = 0;
+    }
+    if (c == '@')
+    {
+        if (player->room->doors[0].password)
+        {
+            clear();
+            refresh();
+            int check = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                WINDOW *formWin = creaetMenuWindow(20, maxX / 3 + 5, maxY / 2 - 15, maxX / 6 + 15);
+                echo();
+                refresh();
+                char **headers = malloc(sizeof(char *));
+                headers[0] = "Password";
+                wmove(formWin, 3, maxX / 2 - 15);
+                refresh();
+                char **result = handleInput(formWin, 1, headers, maxY / 2 - 15, maxX / 6 + 15);
+                int password = stringToNumber(result[0]);
+                if (player->room->doors[0].password != password)
+                {
+                    mvwprintw(formWin, 14, 4, "Password is wrong %d try", i + 1);
+                    wrefresh(formWin);
+                    getchar();
+                    wclear(formWin);
+                    clear();
+                    free(headers);
+                    refresh();
+                }
+                else
+                {
+                    wclear(formWin);
+                    free(headers);
+                    clear();
+                    refresh();
+                    check = 1;
+                    break;
+                }
+            }
+            if (check)
+            {
+                noecho();
+                curs_set(false);
+                showLevel(game->levels[game->currentLevel]);
+                player->room->doors[0].password = 0;
+                player->room->doors[1].password = 0;
+                player->room->doors[1].type = 'n';
+                player->room->doors[0].type = 'n';
+                c = '+';
+                mvprintw(player->room->cord.y + 3, player->room->cord.x + 1, ".");
+                refresh();
+            }
+            else
+            {
+                clear();
+                player->room->doors[0].password = 0;
+                player->room->doors[1].password = 0;
+                showLevel(game->levels[game->currentLevel]);
+                refresh();
+                curs_set(false);
+                mvprintw(1, 1, "You are imprisoned for 5 seconds !!");
+                refresh();
+                sleep(5);
+                mvprintw(1, 1, "                                     ");
+                refresh();
+            }
+        }
+    }
+    if (c == '&')
+    {
+        int pass = randomNumber(1000, 9999);
+        player->room->doors[0].password = pass;
+        player->room->doors[1].password = pass;
+        mvprintw(1, 1, "password : %d", pass);
+        refresh();
+        sleep(5);
+        mvprintw(1, 1, "                       ");
+        refresh();
     }
     if (c == '>')
     {

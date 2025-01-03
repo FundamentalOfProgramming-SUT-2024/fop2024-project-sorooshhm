@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <unistd.h>
 #include "menu.h"
-#include "form.h"
+// #include "form.h"
 #include "game.h"
 
 User *user;
@@ -20,8 +20,11 @@ int main()
 {
 
     initscr();
+    start_color(); 
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);
+    init_pair(2, COLOR_BLUE, COLOR_BLACK);
     // noecho();
-    user = (User*)malloc(sizeof(User));
+    user = (User *)malloc(sizeof(User));
     cbreak();
     getmaxyx(stdscr, maxY, maxX);
     // check authorization for auth menu

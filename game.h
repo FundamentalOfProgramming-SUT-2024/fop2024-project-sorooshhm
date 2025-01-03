@@ -25,6 +25,7 @@ typedef struct
 {
     Point cord;
     char type; // 'n' -> normal 's' -> secret 'l' -> locked
+    int password;
 } Door;
 
 typedef struct
