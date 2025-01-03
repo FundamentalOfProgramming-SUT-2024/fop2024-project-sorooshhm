@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <locale.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <SDL2/SDL.h>
@@ -18,7 +19,7 @@ Mix_Music *playMusic(char *path);
 
 int main()
 {
-
+    setlocale(LC_ALL, "");
     initscr();
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);

@@ -88,6 +88,7 @@ typedef struct
 {
     Room **rooms;
     Passway **passways;
+    Point key;
     int roomsCount;
     int level;
 } Level;

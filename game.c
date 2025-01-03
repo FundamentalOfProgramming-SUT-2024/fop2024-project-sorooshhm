@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <locale.h>
 #include <SDL2/SDL_mixer.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -332,6 +333,8 @@ void createLevel(Level *level, int levelIndex)
     }
     int roomIndex = rand() % roomsCounts;
     rooms[roomIndex]->keyCount = 1;
+    level->key.x = rooms[roomIndex]->cord.x + rooms[roomIndex]->width - 2;
+    level->key.y = rooms[roomIndex]->cord.y + rooms[roomIndex]->height - 3;
 
     level->level = levelIndex;
     level->rooms = rooms;
@@ -366,9 +369,9 @@ void *damagePlayer(void *args)
 
 void showPlayeInfo(Player player)
 {
-    mvprintw(1, maxX / 2, "                                                             ");
+    mvprintw(1, maxX / 2, "                                                                                                   ");
     refresh();
-    mvprintw(1, maxX / 2, "Level : %d   foodsCount : %d   health : %d", player.level + 1, player.foodCount, player.health);
+    mvprintw(1, maxX / 2, "Level : %d  foodsCount : %d  health : %d  key : %d  brokenKey : %d ", player.level + 1, player.foodCount, player.health, player.acientKey, player.brokenAcientKey);
     refresh();
 }
 
@@ -955,12 +958,15 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         // trapMode = 0;
     }
-    // if (c == '△')
-    // {
-    //     player->acientKey += 1;
-    //     player->room->keyCount = 0;
-    //     c = '.';
-    // }
+    if (game->levels[game->currentLevel]->key.x == x && game->levels[game->currentLevel]->key.y == y)
+    {
+        player->acientKey += 1;
+        player->room->keyCount = 0;
+        game->levels[game->currentLevel]->key.x = 0;
+        game->levels[game->currentLevel]->key.y = 0;
+        c = '.';
+        showPlayeInfo(*player);
+    }
     if (c == '@')
     {
         if (player->room->doors[0].password)
@@ -1042,6 +1048,45 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 sleep(5);
                 mvprintw(1, 1, "                                     ");
                 refresh();
+            }
+        }
+        else if (player->acientKey > 0)
+        {
+            mvprintw(1, 1, "You can open the door using ancient key !! (press o)");
+            refresh();
+            char ch = getchar();
+            mvprintw(1, 1, "                                                     ");
+            refresh();
+            if (ch == 'o')
+            {
+                int num = rand();
+                if (num % 10 != 8)
+                {
+                    player->room->doors[0].password = 0;
+                    player->room->doors[1].password = 0;
+                    player->room->doors[1].type = 'n';
+                    player->room->doors[0].type = 'n';
+                    c = '+';
+                    player->acientKey -= 1;
+                    mvprintw(player->room->cord.y + 3, player->room->cord.x + 1, ".");
+                    refresh();
+                    showPlayeInfo(*player);
+                }
+                else
+                {
+                    mvprintw(1, 1, "Oops , the key is broken now :(");
+                    refresh();
+                    player->acientKey -= 1;
+                    player->brokenAcientKey += 1;
+                    if (player->brokenAcientKey == 2)
+                    {
+                        player->brokenAcientKey -= 2;
+                        player->acientKey += 1;
+                    }
+                    getchar();
+                    mvprintw(1, 1, "                                  ");
+                    showPlayeInfo(*player);
+                }
             }
         }
     }
@@ -1213,7 +1258,9 @@ void printRoom(Room *room)
     printStair(room);
     if (room->keyCount)
     {
-        mvprintw(room->cord.y + height - 3, room->cord.x + width - 1, "△");
+        attron(COLOR_PAIR(3));
+        mvprintw(room->cord.y + height - 3, room->cord.x + width - 2, "%lc", L'\u25B3');
+        attroff(COLOR_PAIR(3));
     }
     refresh();
 }
