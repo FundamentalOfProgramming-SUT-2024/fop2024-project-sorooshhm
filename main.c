@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <unistd.h>
 #include "menu.h"
-// #include "form.h"
+#include "form.h"
 #include "game.h"
 
 User *user;
@@ -20,9 +20,11 @@ int main()
 {
 
     initscr();
-    start_color(); 
+    start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
     init_pair(2, COLOR_BLUE, COLOR_BLACK);
+    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(4, COLOR_RED, COLOR_BLACK);
     // noecho();
     user = (User *)malloc(sizeof(User));
     cbreak();
@@ -68,7 +70,9 @@ int main()
                 user = login(result[0], result[1], message);
                 if (user == NULL)
                 {
+                    wattron(formWin, COLOR_PAIR(4));
                     mvwprintw(formWin, 12, 4, "%s", *message);
+                    wattroff(formWin, COLOR_PAIR(4));
                     mvwprintw(formWin, 14, 4, "Press any key to continue ...");
                     wrefresh(formWin);
                     getchar();
@@ -100,7 +104,9 @@ int main()
                 user = registerUser(result[0], result[2], result[1], message);
                 if (user == NULL)
                 {
+                    wattron(formWin, COLOR_PAIR(4));
                     mvwprintw(formWin, 25, 4, "%s", *message);
+                    wattroff(formWin, COLOR_PAIR(4));
                     mvwprintw(formWin, 27, 4, "Press any key to continue ...");
                     wrefresh(formWin);
                     getchar();

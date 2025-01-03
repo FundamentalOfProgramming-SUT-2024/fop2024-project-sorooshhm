@@ -8,4 +8,5 @@ int isDigit(char c);
 int validateEmail(char *email);
 int validatePassword(char *pass);
 int randomNumber(int min, int max);
+int reverseNumber(int num);
 

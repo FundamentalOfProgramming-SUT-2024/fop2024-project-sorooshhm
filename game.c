@@ -756,7 +756,7 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     int num = rand();
     for (int i = 0; i < room->doorCount; i++)
     {
-        if (num % 5 == 3)
+        if (num % 5 == 3 && i != room->doorCount - 1)
         {
             if (i % 2 == 0)
             {
@@ -964,7 +964,24 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 int password = stringToNumber(result[0]);
                 if (player->room->doors[0].password != password)
                 {
+                    if (i == 0)
+                    {
+                        wattron(formWin, COLOR_PAIR(3));
+                    }
+                    else if (i == 1)
+                    {
+                        wattron(formWin, COLOR_PAIR(4));
+                    }
                     mvwprintw(formWin, 14, 4, "Password is wrong %d try", i + 1);
+                    wrefresh(formWin);
+                    if (i == 0)
+                    {
+                        wattroff(formWin, COLOR_PAIR(3));
+                    }
+                    else if (i == 1)
+                    {
+                        wattroff(formWin, COLOR_PAIR(4));
+                    }
                     wrefresh(formWin);
                     getchar();
                     wclear(formWin);
@@ -1014,8 +1031,17 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     if (c == '&')
     {
         int pass = randomNumber(1000, 9999);
-        player->room->doors[0].password = pass;
-        player->room->doors[1].password = pass;
+        int num = rand();
+        if (num % 5 == 2)
+        {
+            player->room->doors[0].password = reverseNumber(pass);
+            player->room->doors[1].password = reverseNumber(pass);
+        }
+        else
+        {
+            player->room->doors[0].password = pass;
+            player->room->doors[1].password = pass;
+        }
         mvprintw(1, 1, "password : %d", pass);
         refresh();
         sleep(5);
