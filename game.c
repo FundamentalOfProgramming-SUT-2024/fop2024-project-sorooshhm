@@ -258,6 +258,10 @@ void createLevel(Level *level, int levelIndex)
         {
             rooms[0]->isVisible = true;
         }
+        if(i==roomsCounts-1){
+            rooms[i]->doors[0].type = 'n';
+            rooms[i]->doors[1].type = 'n';
+        }
         rooms[i]->index = i;
     }
 
@@ -756,7 +760,7 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     int num = rand();
     for (int i = 0; i < room->doorCount; i++)
     {
-        if (num % 5 == 3 && i != room->doorCount - 1)
+        if (num % 5 == 3)
         {
             if (i % 2 == 0)
             {
@@ -1093,18 +1097,21 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (c == '$')
     {
-        Food f = findFood(cur, player->room);
-        player->foods[player->foodCount] = (Food *)malloc(sizeof(Food));
-        player->foods[player->foodCount]->cord = f.cord;
-        player->foods[player->foodCount]->health = f.health;
-        player->foods[player->foodCount]->isUsed = f.isUsed;
-        player->foodCount++;
-        c = '.';
-        if (player->room->foodCount)
+        if (player->foodCount < 5)
         {
-            player->room->foodCount -= 1;
+            Food f = findFood(cur, player->room);
+            player->foods[player->foodCount] = (Food *)malloc(sizeof(Food));
+            player->foods[player->foodCount]->cord = f.cord;
+            player->foods[player->foodCount]->health = f.health;
+            player->foods[player->foodCount]->isUsed = f.isUsed;
+            player->foodCount++;
+            c = '.';
+            if (player->room->foodCount)
+            {
+                player->room->foodCount -= 1;
+            }
+            showPlayeInfo(*player);
         }
-        showPlayeInfo(*player);
     }
     if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
     {
