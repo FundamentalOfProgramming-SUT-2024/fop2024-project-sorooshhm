@@ -142,7 +142,7 @@ void resumeGame(User *user, Mix_Music *music)
     u = user;
     game = (Game *)malloc(sizeof(Game));
     loadGame(game, user);
-    player = (Player* )malloc(sizeof(Player));
+    player = (Player *)malloc(sizeof(Player));
     player->passway = NULL;
     player->room = NULL;
     int roomIndex = inRoom(game->levels[game->currentLevel]->rooms, game->levels[game->currentLevel]->roomsCount, game->player->cord);
@@ -1161,6 +1161,7 @@ int neighborRoom(Room **rooms, int index, int count, int y)
 }
 
 int trapMode = 0;
+long long doorDelay = 0;
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
     if (game->currentLevel == 3 && player->room->index == game->levels[game->currentLevel]->roomsCount - 1)
@@ -1220,6 +1221,17 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     {
         if (player->room->doors[0].password)
         {
+            if (doorDelay)
+            {
+                struct timeval tv;
+                gettimeofday(&tv, NULL);
+                long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+                if (newmil - doorDelay > 1500)
+                {
+                    player->room->doors[0].password = 1111;
+                    player->room->doors[1].password = 1111;
+                }
+            }
             clear();
             refresh();
             int check = 0;
@@ -1298,6 +1310,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 mvprintw(1, 1, "                                     ");
                 refresh();
             }
+            doorDelay = 0;
         }
         else if (player->acientKey > 0)
         {
@@ -1337,6 +1350,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                     showPlayeInfo(*player);
                 }
             }
+            doorDelay = 0;
         }
     }
     if (c == '&')
@@ -1357,6 +1371,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         sleep(5);
         mvprintw(1, 1, "                       ");
+        if (num % 8 == 1)
+        {
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            doorDelay = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+        }
         refresh();
     }
     if (c == '>')
