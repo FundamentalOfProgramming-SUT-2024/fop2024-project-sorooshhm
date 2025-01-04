@@ -215,7 +215,7 @@ void loadGame(Game *game, User *user)
 
     fread(&game->currentLevel, sizeof(int), 1, file);
     int levelCount = game->currentLevel + 1;
-    game->levels = (Level **)malloc(sizeof(Level *) * levelCount);
+    game->levels = (Level **)malloc(sizeof(Level *) * 4);
 
     for (int i = 0; i < levelCount; i++)
     {

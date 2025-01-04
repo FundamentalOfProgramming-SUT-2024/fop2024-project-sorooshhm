@@ -226,7 +226,7 @@ void win()
     u->score += (player->gold * u->setting.level) / 5;
     u->games += 1;
     long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-    u->gameplay = (newmil - milliseconds) / 10000;
+    u->gameplay += (newmil - milliseconds) / 1000;
 
     WINDOW *win = newwin(maxY, maxX, 0, 0);
     mvwprintw(win, maxY / 2, 50, "You won !!!! %lc", L'😍');
@@ -404,7 +404,7 @@ void createLevel(Level *level, int levelIndex)
                 }
                 rooms[i]->type = 'n';
             }
-            else if ((i == 0 || i == roomsCounts - 1) && rndm % 8 > 4)
+            else if (((i == 0 && levelIndex != 0) || i == roomsCounts - 1) && rndm % 8 > 4)
             {
                 rooms[i]->foodCount = 0;
                 int count = randomNumber(1, 4);
@@ -959,6 +959,16 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
             }
         }
     }
+    if (num % 4 == 1)
+    {
+        room->window.x = room->cord.x + room->width;
+        room->window.y = room->cord.y + 2 + randomNumber(0, room->height - 4);
+    }
+    else
+    {
+        room->window.x = 0;
+        room->window.y = 0;
+    }
     room->foodCount = 0;
     room->trapCount = 0;
     room->goldCount = 0;
@@ -1121,6 +1131,16 @@ int isGold(Room *room, Point p)
     }
     return -1;
 }
+int neighborRoom(Room**rooms,int index,int count , int y){
+    for (int i = 0; i < count; i++)
+    {
+        if(y > rooms[i]->cord.y && y < rooms[i]->cord.y + rooms[i]->height && rooms[i]->index > index){
+            return i;
+        }
+    }
+    return -1;
+}
+
 int trapMode = 0;
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
@@ -1156,6 +1176,16 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         // trapMode = 0;
     }
 
+    if(c=='='){
+        int roomIndex = neighborRoom(rooms , player->room->index,roomsCount , y);
+        if(roomIndex != -1){
+            printRoom(rooms[roomIndex]);
+            getchar();
+            clear();
+            refresh();
+            showLevel(game->levels[game->currentLevel]);
+        }
+    }
     if (game->levels[game->currentLevel]->key.x == x && game->levels[game->currentLevel]->key.y == y)
     {
         player->acientKey += 1;
@@ -1189,7 +1219,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                     {
                         wattron(formWin, COLOR_PAIR(3));
                     }
-                    else if (i == 1)
+                    else
                     {
                         wattron(formWin, COLOR_PAIR(4));
                     }
@@ -1429,6 +1459,12 @@ void printStair(Room *room)
         mvprintw(room->stair.cord.y, room->stair.cord.x, ">");
     refresh();
 }
+void printWindow(Room *room)
+{
+    if (room->window.x)
+        mvprintw(room->window.y, room->window.x, "=");
+    refresh();
+}
 void printGolds(Room *room)
 {
     for (int i = 0; i < room->goldCount; i++)
@@ -1487,6 +1523,7 @@ void printRoom(Room *room)
     printFoods(room);
     printTraps(room);
     printStair(room);
+    printWindow(room);
     printGolds(room);
     if (room->keyCount)
     {
