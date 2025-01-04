@@ -93,19 +93,19 @@ void startGame(User *user, Mix_Music *music)
     // pthread_exit(NULL);
     // saving the game
     saveGame(game, user);
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     for (int j = 0; j < game->levels[i]->roomsCount; j++)
-    //     {
-    //         free(game->levels[i]->rooms[j]);
-    //     }
-    //     for (int j = 0; j < game->levels[i]->roomsCount - 1; j++)
-    //     {
-    //         free(game->levels[i]->passways[j]);
-    //     }
-    //     free(game->levels[i]);
-    // }
-    // free(game);
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < game->levels[i]->roomsCount; j++)
+        {
+            free(game->levels[i]->rooms[j]);
+        }
+        for (int j = 0; j < game->levels[i]->roomsCount - 1; j++)
+        {
+            free(game->levels[i]->passways[j]);
+        }
+        free(game->levels[i]);
+    }
+    free(game);
 
     clear();
     refresh();
@@ -164,32 +164,6 @@ void resumeGame(User *user, Mix_Music *music)
     // refresh();
 
     player = game->player;
-
-    for (int i = 0; i <= game->currentLevel; i++)
-    {
-        Level *level = game->levels[game->currentLevel];
-        for (int j = 0; j < level->roomsCount; j++)
-        {
-            Room * room = level->rooms[j];
-            for (int k = 0; k < level->rooms[j]->goldCount; i++)
-            {
-                int num = rand();
-                room->golds[k].cord.x = randomNumber(room->cord.x + 2, room->cord.x + room->width - 2);
-                room->golds[k].cord.y = randomNumber(room->cord.y + 3, room->cord.y + room->height - 3);
-                room->golds[k].isUsed = false;
-                if (num % 8 == 1)
-                {
-                    room->golds[k].type = 'b';
-                    room->golds[k].count = 10;
-                }
-                else
-                {
-                    room->golds[k].type = 'g';
-                    room->golds[k].count = 5;
-                }
-            }
-        }
-    }
 
     for (int i = game->currentLevel + 1; i < 4; i++)
     {
@@ -352,6 +326,10 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->foods[j].isUsed = false;
         }
         count = randomNumber(1, 3);
+        if (i == roomsCounts - 1 && levelIndex == 3)
+        {
+            count = 6;
+        }
         rooms[i]->trapCount = count;
         rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
         for (int j = 0; j < count; j++)
