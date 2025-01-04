@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/time.h>
 #include "auth.h"
 #include "utils.h"
 #include "game.h"
@@ -42,12 +43,19 @@ extern int maxY,
 
 int mapMode = 0;
 int damageTime = 30;
+int win_state = 0;
 WINDOW *mapWin;
 Game *game;
 Player *player;
+User *u;
+long long milliseconds;
 
 void startGame(User *user, Mix_Music *music)
 {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+    u = user;
     srand(time(NULL));
     // printf("%d , %d\n", maxX, maxY);
     noecho();
@@ -93,19 +101,6 @@ void startGame(User *user, Mix_Music *music)
     // pthread_exit(NULL);
     // saving the game
     saveGame(game, user);
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < game->levels[i]->roomsCount; j++)
-        {
-            free(game->levels[i]->rooms[j]);
-        }
-        for (int j = 0; j < game->levels[i]->roomsCount - 1; j++)
-        {
-            free(game->levels[i]->passways[j]);
-        }
-        free(game->levels[i]);
-    }
-    free(game);
 
     clear();
     refresh();
@@ -125,14 +120,28 @@ int inPassway(Passway **passways, int count, Point p)
                 return i;
             }
         }
+        if (p.x == passways[i]->points[0].x && (p.y == passways[i]->points[0].y + 1 || p.y == passways[i]->points[0].y - 1))
+        {
+            passways[i]->visiblePoint = 5;
+            return i;
+        }
     }
     return -1;
 }
 
 void resumeGame(User *user, Mix_Music *music)
 {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+    srand(time(NULL));
+    noecho();
+
+    u = user;
     game = (Game *)malloc(sizeof(Game));
     loadGame(game, user);
+    player->passway = NULL;
+    player->room = NULL;
     int roomIndex = inRoom(game->levels[game->currentLevel]->rooms, game->levels[game->currentLevel]->roomsCount, game->player->cord);
     if (roomIndex != -1)
     {
@@ -205,6 +214,25 @@ void resumeGame(User *user, Mix_Music *music)
     Mix_FreeMusic(music);
     // pthread_join(damageThread, NULL);
     return;
+}
+
+void win()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    u->golds += player->gold;
+    u->score += (player->gold * u->setting.level) / 5;
+    u->games += 1;
+    long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+    u->gameplay = (newmil - milliseconds) / 10000;
+
+    WINDOW *win = newwin(maxY, maxX, 0, 0);
+    mvwprintw(win, maxY / 2, 50, "You won !!!! %lc", L'😍');
+    mvwprintw(win, maxY / 2 + 2, 50, "Your golds : %d Your score : %d", player->gold, (player->gold * u->setting.level) / 5);
+    wrefresh(win);
+    sleep(5);
+    wclear(win);
+    clear();
 }
 
 int changeLevel(Stair stair)
@@ -464,6 +492,11 @@ void createLevel(Level *level, int levelIndex)
 
 void lose()
 {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+    u->gameplay = (newmil - milliseconds) / 10000;
+
     WINDOW *lostWin = newwin(maxY, maxX, 0, 0);
     mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player->name);
     wrefresh(lostWin);
@@ -921,6 +954,10 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
             }
         }
     }
+    room->foodCount = 0;
+    room->trapCount = 0;
+    room->goldCount = 0;
+
     return room;
 }
 
@@ -934,6 +971,11 @@ void handleMove()
     while (1)
     {
         Level *level = game->levels[game->currentLevel];
+        if (win_state)
+        {
+            win();
+            break;
+        }
         if (player->health <= 0)
         {
             lose();
@@ -1077,16 +1119,15 @@ int isGold(Room *room, Point p)
 int trapMode = 0;
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
+    if (game->currentLevel == 3 && player->room->index == game->levels[game->currentLevel]->roomsCount - 1)
+    {
+        win_state = 1;
+        return;
+    }
     char c = mvinch(y, x);
     Point cur;
     cur.x = x;
     cur.y = y;
-    if (trapMode == 1)
-    {
-        mvprintw(player->cord.y, player->cord.x, "^");
-        refresh();
-        // trapMode = 0;
-    }
     int goldIndex = isGold(player->room, cur);
     if (goldIndex != -1)
     {
@@ -1103,6 +1144,13 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         mvprintw(1, 1, "                          ");
         refresh();
     }
+    if (trapMode == 1)
+    {
+        mvprintw(player->cord.y, player->cord.x, "^");
+        refresh();
+        // trapMode = 0;
+    }
+
     if (game->levels[game->currentLevel]->key.x == x && game->levels[game->currentLevel]->key.y == y)
     {
         player->acientKey += 1;
@@ -1287,6 +1335,10 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (c == '#')
     {
+        if (player->passway == NULL)
+        {
+            player->passway = game->levels[game->currentLevel]->passways[player->room->index];
+        }
         showPass(player->passway);
         player->passway->visiblePoint += 1;
         if (player->passway->visiblePoint == player->passway->count)
@@ -1302,7 +1354,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     {
         if (player->foodCount < 5)
         {
-            Food f = findFood(cur, player->room);
+            findFood(cur, player->room);
             player->foodCount++;
             c = '.';
             player->room->foodCount--;

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "menu.h"
 #include "form.h"
+#include "db.h"
 #include "game.h"
 
 User *user;
@@ -139,7 +140,7 @@ int main()
             user->username = result[0];
             user->isAuth = false;
             (user)->setting.color = 0;
-            (user)->setting.level = 0;
+            (user)->setting.level = 1;
             (user)->setting.music = "./music/1.mp3";
             checkAuth = '2';
             wclear(formWin);
@@ -158,6 +159,7 @@ int main()
             startGame(user, music);
             clear();
             refresh();
+            updateUser(user);
         }
         if (choice == 1)
         {
@@ -166,6 +168,7 @@ int main()
             resumeGame(user, music);
             clear();
             refresh();
+            updateUser(user);
         }
         else if (choice == 6)
         {
@@ -281,7 +284,7 @@ int preStartMenu(char type)
                         menu[1] = "Medium";
                         menu[2] = "Hard";
                         int choice = handleMenuSelection(settingWin, menu, 3, 0);
-                        user->setting.level = choice;
+                        user->setting.level = choice + 1;
                         wclear(settingWin);
                         wrefresh(settingWin);
                         free(menu);
