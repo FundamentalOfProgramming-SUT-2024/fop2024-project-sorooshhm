@@ -59,6 +59,7 @@ void startGame(User *user, Mix_Music *music)
     srand(time(NULL));
     // printf("%d , %d\n", maxX, maxY);
     noecho();
+    damageTime -= (user->setting.level - 1) * 5;
 
     // initilizing the game
     game = (Game *)malloc(sizeof(Game));
@@ -77,7 +78,7 @@ void startGame(User *user, Mix_Music *music)
     player->state = 1;
     player->room = game->levels[game->currentLevel]->rooms[0];
     player->passway = NULL;
-    player->health = 30;
+    player->health = 40;
     player->foodCount = 0;
     player->level = 0;
     player->acientKey = 0;
@@ -136,6 +137,7 @@ void resumeGame(User *user, Mix_Music *music)
     milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
     srand(time(NULL));
     noecho();
+    damageTime -= (user->setting.level - 1) * 5;
 
     u = user;
     game = (Game *)malloc(sizeof(Game));
@@ -359,7 +361,6 @@ void createLevel(Level *level, int levelIndex)
         }
         else
         {
-
             if (rndm % 8 <= 4)
             {
                 int count = randomNumber(2, 4);
@@ -494,11 +495,14 @@ void lose()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
+    u->golds += player->gold;
+    u->score += (player->gold * u->setting.level) / 5;
     long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-    u->gameplay = (newmil - milliseconds) / 10000;
+    u->gameplay += (newmil - milliseconds) / 1000;
 
     WINDOW *lostWin = newwin(maxY, maxX, 0, 0);
     mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player->name);
+    mvwprintw(lostWin, maxY / 2 + 2, 50, "Your golds : %d Your score : %d", player->gold, (player->gold * u->setting.level) / 5);
     wrefresh(lostWin);
     sleep(5);
     wclear(lostWin);
@@ -1315,6 +1319,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (c == '+')
     {
+        player->state = 0;
         if (player->passway == NULL)
         {
             player->passway = passways[0];
@@ -1392,6 +1397,11 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         player->room = rooms[index];
         rooms[index]->isVisible = true;
         player->state = 1;
+    }
+    if (player->room->type == 't' && inRoom(rooms, roomsCount, player->cord) == player->room->index)
+    {
+        player->health--;
+        showPlayeInfo(*player);
     }
 }
 

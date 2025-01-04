@@ -89,7 +89,7 @@ void insertUser(User *user)
     fprintf(db, "%d\n", user->games);
     fprintf(db, "%d\n", user->golds);
     fprintf(db, "%d\n", user->score);
-    fprintf(db, "%d\n", user->gameplay);
+    fprintf(db, "%lld\n", user->gameplay);
     fclose(db);
 }
 
@@ -127,7 +127,7 @@ void updateUser(User *user)
     fprintf(db, "%d\n", user->games);
     fprintf(db, "%d\n", user->golds);
     fprintf(db, "%d\n", user->score);
-    fprintf(db, "%d\n", user->gameplay);
+    fprintf(db, "%lld\n", user->gameplay);
     fclose(db);
 }
 

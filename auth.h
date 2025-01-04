@@ -16,7 +16,7 @@ typedef struct
     int games;
     int golds;
     int score;
-    int gameplay;
+    long long gameplay;
     bool isAuth;
     Setting setting;
 } User;

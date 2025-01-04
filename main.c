@@ -351,7 +351,7 @@ int preStartMenu(char type)
                 mvwprintw(profileWin, 8, 20, "Games : %d", user->games);
                 mvwprintw(profileWin, 10, 20, "Golds : %d", user->golds);
                 mvwprintw(profileWin, 12, 20, "Score : %d", user->score);
-                mvwprintw(profileWin, 14, 20, "Gameplay : %d", user->gameplay);
+                mvwprintw(profileWin, 14, 20, "Gameplay : %lld min", user->gameplay/60);
                 wrefresh(profileWin);
                 while (1)
                 {
@@ -428,6 +428,9 @@ int preStartMenu(char type)
 }
 Mix_Music *playMusic(char *path)
 {
+    if(path == NULL){
+        path = "./music/1.mp3";
+    }
     if (SDL_Init(SDL_INIT_AUDIO) < 0)
     {
         printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
