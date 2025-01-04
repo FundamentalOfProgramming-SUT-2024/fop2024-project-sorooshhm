@@ -325,6 +325,17 @@ void createLevel(Level *level, int levelIndex)
         }
         rooms[i]->index = i;
         rooms[i]->keyCount = 0;
+        if (levelIndex >= 2)
+        {
+            int randomNum = rand();
+            if (randomNum % 6 == 1)
+            {
+                rooms[i]->doors[0].type = 'h';
+                rooms[i]->doors[1].type = 'h';
+                rooms[i]->doors[0].password = 0;
+                rooms[i]->doors[1].password = 0;
+            }
+        }
     }
 
     // initializing passways
@@ -481,6 +492,7 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->stair.to = levelIndex + 1;
         }
     }
+
     int roomIndex = rand() % roomsCounts;
     rooms[roomIndex]->keyCount = 1;
     level->key.x = rooms[roomIndex]->cord.x + rooms[roomIndex]->width - 2;
@@ -886,17 +898,27 @@ void printDoors(Room *room)
     WINDOW *screen = mapMode ? mapWin : stdscr;
     for (int i = 0; i < room->doorCount; i++)
     {
-        if (room->doors[i].type != 'l')
+        if (room->doors[i].type == 'n')
         {
             mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
         }
-        else
+        else if (room->doors->type == 'l')
         {
             attron(COLOR_PAIR(1));
             mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
             attroff(COLOR_PAIR(1));
             attron(COLOR_PAIR(2));
             mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            attroff(COLOR_PAIR(2));
+        }
+        else if (room->doors->type == 'h')
+        {
+            attron(COLOR_PAIR(1));
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
+            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
             attroff(COLOR_PAIR(2));
         }
     }
@@ -1288,6 +1310,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 noecho();
                 curs_set(false);
                 showLevel(game->levels[game->currentLevel]);
+                if (player->room->doors[0].type == 'h')
+                {
+                    clear();
+                    refresh();
+                    showLevel(game->levels[game->currentLevel]);
+                }
                 player->room->doors[0].password = 0;
                 player->room->doors[1].password = 0;
                 player->room->doors[1].type = 'n';
@@ -1309,6 +1337,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 sleep(5);
                 mvprintw(1, 1, "                                     ");
                 refresh();
+                if (player->room->doors[0].type == 'h')
+                {
+                    clear();
+                    refresh();
+                    showLevel(game->levels[game->currentLevel]);
+                }
             }
             doorDelay = 0;
         }
@@ -1347,6 +1381,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                     }
                     getchar();
                     mvprintw(1, 1, "                                  ");
+                    if (player->room->doors[0].type == 'h')
+                    {
+                        clear();
+                        refresh();
+                        showLevel(game->levels[game->currentLevel]);
+                    }
                     showPlayeInfo(*player);
                 }
             }
@@ -1355,29 +1395,54 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (c == '&')
     {
-        int pass = randomNumber(1000, 9999);
-        int num = rand();
-        if (num % 5 == 2)
+        if (player->room->doors[0].type == 'l')
         {
-            player->room->doors[0].password = reverseNumber(pass);
-            player->room->doors[1].password = reverseNumber(pass);
+            int pass = randomNumber(1000, 9999);
+            int num = rand();
+            if (num % 5 == 2)
+            {
+                player->room->doors[0].password = reverseNumber(pass);
+                player->room->doors[1].password = reverseNumber(pass);
+            }
+            else
+            {
+                player->room->doors[0].password = pass;
+                player->room->doors[1].password = pass;
+            }
+            mvprintw(1, 1, "password : %d", pass);
+            refresh();
+            sleep(5);
+            mvprintw(1, 1, "                       ");
+            if (num % 8 == 1)
+            {
+                struct timeval tv;
+                gettimeofday(&tv, NULL);
+                doorDelay = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+            }
+            refresh();
         }
-        else
+        else if (player->room->doors[0].type == 'h')
         {
-            player->room->doors[0].password = pass;
-            player->room->doors[1].password = pass;
+            int pass = randomNumber(1000, 9999);
+            int num = rand();
+            if (player->room->doors[0].password)
+            {
+                player->room->doors[0].password += pass * 10000;
+                player->room->doors[1].password += pass * 10000;
+            }
+            else
+            {
+                player->room->doors[0].password = pass;
+                player->room->doors[1].password = pass;
+            }
+
+            mvprintw(1, 1, "password : %d", pass);
+            refresh();
+            sleep(5);
+            mvprintw(1, 1, "                       ");
+            mvprintw(y, x, ".");
+            refresh();
         }
-        mvprintw(1, 1, "password : %d", pass);
-        refresh();
-        sleep(5);
-        mvprintw(1, 1, "                       ");
-        if (num % 8 == 1)
-        {
-            struct timeval tv;
-            gettimeofday(&tv, NULL);
-            doorDelay = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-        }
-        refresh();
     }
     if (c == '>')
     {
