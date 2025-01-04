@@ -98,7 +98,7 @@ void startGame(User *user, Mix_Music *music)
     // checking key pressing
     handleMove(game->levels[game->currentLevel]);
 
-    // pthread_exit(NULL);
+    pthread_cancel(damageThread);
     // saving the game
     saveGame(game, user);
 
@@ -192,7 +192,7 @@ void resumeGame(User *user, Mix_Music *music)
     // checking key pressing
     handleMove(game->levels[game->currentLevel]);
 
-    // pthread_exit(NULL);
+    pthread_cancel(damageThread);
     // saving the game
     saveGame(game, user);
     for (int i = 0; i < 4; i++)
@@ -507,6 +507,7 @@ void lose()
 
 void *damagePlayer(void *args)
 {
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     while (1)
     {
         sleep(damageTime);
