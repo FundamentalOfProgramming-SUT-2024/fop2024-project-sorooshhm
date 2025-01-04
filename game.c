@@ -314,50 +314,126 @@ void createLevel(Level *level, int levelIndex)
         rooms[i]->foodCount = 0;
         rooms[i]->trapCount = 0;
         rooms[i]->stairCount = 0;
-
-        int count = randomNumber(2, 4);
-        rooms[i]->foodCount = count;
-        rooms[i]->foods = (Food *)malloc(count * sizeof(Food));
-        for (int j = 0; j < count; j++)
+        int rndm = rand();
+        if (levelIndex == 3 && i == roomsCounts - 1)
         {
-            rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
-            rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
-            rooms[i]->foods[j].health = 3;
-            rooms[i]->foods[j].isUsed = false;
-        }
-        count = randomNumber(1, 3);
-        if (i == roomsCounts - 1 && levelIndex == 3)
-        {
-            count = 6;
-        }
-        rooms[i]->trapCount = count;
-        rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
-        for (int j = 0; j < count; j++)
-        {
-            rooms[i]->traps[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
-            rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
-            rooms[i]->traps[j].isVisible = false;
-        }
-        count = randomNumber(0, 2);
-        rooms[i]->goldCount = count;
-        rooms[i]->golds = (Gold *)malloc(count * sizeof(Gold));
-        for (int j = 0; j < count; j++)
-        {
-            int num = rand();
-            rooms[i]->golds[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
-            rooms[i]->golds[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
-            rooms[i]->golds[j].isUsed = false;
-            if (num % 8 == 1)
+            rooms[i]->foodCount = 0;
+            int count = 6;
+            rooms[i]->trapCount = count;
+            rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
+            for (int j = 0; j < count; j++)
             {
-                rooms[i]->golds[j].type = 'b';
-                rooms[i]->golds[j].count = 10;
+                rooms[i]->traps[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                rooms[i]->traps[j].isVisible = false;
+            }
+            rooms[i]->type = 'g';
+        }
+        else
+        {
+
+            if (rndm % 8 <= 4)
+            {
+                int count = randomNumber(2, 4);
+                rooms[i]->foodCount = count;
+                rooms[i]->foods = (Food *)malloc(count * sizeof(Food));
+                for (int j = 0; j < count; j++)
+                {
+                    rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->foods[j].health = 3;
+                    rooms[i]->foods[j].isUsed = false;
+                }
+                count = randomNumber(1, 3);
+                rooms[i]->trapCount = count;
+                rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
+                for (int j = 0; j < count; j++)
+                {
+                    rooms[i]->traps[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->traps[j].isVisible = false;
+                }
+                count = randomNumber(0, 2);
+                rooms[i]->goldCount = count;
+                rooms[i]->golds = (Gold *)malloc(count * sizeof(Gold));
+                for (int j = 0; j < count; j++)
+                {
+                    int num = rand();
+                    rooms[i]->golds[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->golds[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->golds[j].isUsed = false;
+                    if (num % 8 == 1)
+                    {
+                        rooms[i]->golds[j].type = 'b';
+                        rooms[i]->golds[j].count = 10;
+                    }
+                    else
+                    {
+                        rooms[i]->golds[j].type = 'g';
+                        rooms[i]->golds[j].count = 5;
+                    }
+                }
+                rooms[i]->type = 'n';
+            }
+            else if ((i == 0 || i == roomsCounts - 1) && rndm % 8 > 4)
+            {
+                rooms[i]->foodCount = 0;
+                int count = randomNumber(1, 4);
+                rooms[i]->trapCount = count;
+                rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
+                for (int j = 0; j < count; j++)
+                {
+                    rooms[i]->traps[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->traps[j].isVisible = false;
+                }
+                rooms[i]->type = 't';
             }
             else
             {
-                rooms[i]->golds[j].type = 'g';
-                rooms[i]->golds[j].count = 5;
+                int count = randomNumber(2, 4);
+                rooms[i]->foodCount = count;
+                rooms[i]->foods = (Food *)malloc(count * sizeof(Food));
+                for (int j = 0; j < count; j++)
+                {
+                    rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->foods[j].health = 3;
+                    rooms[i]->foods[j].isUsed = false;
+                }
+                count = randomNumber(1, 3);
+                rooms[i]->trapCount = count;
+                rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
+                for (int j = 0; j < count; j++)
+                {
+                    rooms[i]->traps[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->traps[j].isVisible = false;
+                }
+                count = randomNumber(0, 2);
+                rooms[i]->goldCount = count;
+                rooms[i]->golds = (Gold *)malloc(count * sizeof(Gold));
+                for (int j = 0; j < count; j++)
+                {
+                    int num = rand();
+                    rooms[i]->golds[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                    rooms[i]->golds[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                    rooms[i]->golds[j].isUsed = false;
+                    if (num % 8 == 1)
+                    {
+                        rooms[i]->golds[j].type = 'b';
+                        rooms[i]->golds[j].count = 10;
+                    }
+                    else
+                    {
+                        rooms[i]->golds[j].type = 'g';
+                        rooms[i]->golds[j].count = 5;
+                    }
+                }
+                rooms[i]->type = 'n';
             }
         }
+
         if (i == 0 && levelIndex != 0)
         {
             rooms[i]->stairCount = 1;
@@ -1297,7 +1373,7 @@ void printGolds(Room *room)
         if (!room->golds[i].isUsed)
         {
             if (room->golds[i].type == 'g')
-                mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'🪙');
+                mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'💵');
             else
                 mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'💰');
         }
@@ -1313,6 +1389,14 @@ void printRoom(Room *room)
     height = room->height;
     width = room->width;
     WINDOW *screen = mapMode ? mapWin : stdscr;
+    if (room->type == 't')
+    {
+        attron(COLOR_PAIR(5));
+    }
+    else if (room->type == 'g')
+    {
+        attron(COLOR_PAIR(3));
+    }
     for (int j = x + 1; j < x + width; j++)
     {
         mvwprintw(screen, y + 1, j, "-");
@@ -1327,6 +1411,14 @@ void printRoom(Room *room)
         {
             mvwprintw(screen, j, k, ".");
         }
+    }
+    if (room->type == 't')
+    {
+        attroff(COLOR_PAIR(5));
+    }
+    else if (room->type == 'g')
+    {
+        attroff(COLOR_PAIR(3));
     }
     printDoors(room);
     printFoods(room);

@@ -75,6 +75,7 @@ typedef struct
     int foodCount;
     int goldCount;
     int trapCount;
+    char type;
     int stairCount;
 } Room;
 
