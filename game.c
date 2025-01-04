@@ -142,6 +142,7 @@ void resumeGame(User *user, Mix_Music *music)
     u = user;
     game = (Game *)malloc(sizeof(Game));
     loadGame(game, user);
+    player = (Player* )malloc(sizeof(Player));
     player->passway = NULL;
     player->room = NULL;
     int roomIndex = inRoom(game->levels[game->currentLevel]->rooms, game->levels[game->currentLevel]->roomsCount, game->player->cord);
@@ -1017,6 +1018,22 @@ void handleMove()
         {
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y);
         }
+        if (c == 'q')
+        {
+            movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y - 1);
+        }
+        if (c == 'r')
+        {
+            movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 1, game->player->cord.y - 1);
+        }
+        if (c == 'z')
+        {
+            movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y + 1);
+        }
+        if (c == 'c')
+        {
+            movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 1, game->player->cord.y + 1);
+        }
         else if (c == 'm')
         {
 
@@ -1131,10 +1148,12 @@ int isGold(Room *room, Point p)
     }
     return -1;
 }
-int neighborRoom(Room**rooms,int index,int count , int y){
+int neighborRoom(Room **rooms, int index, int count, int y)
+{
     for (int i = 0; i < count; i++)
     {
-        if(y > rooms[i]->cord.y && y < rooms[i]->cord.y + rooms[i]->height && rooms[i]->index > index){
+        if (y > rooms[i]->cord.y && y < rooms[i]->cord.y + rooms[i]->height && rooms[i]->index > index)
+        {
             return i;
         }
     }
@@ -1176,9 +1195,11 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         // trapMode = 0;
     }
 
-    if(c=='='){
-        int roomIndex = neighborRoom(rooms , player->room->index,roomsCount , y);
-        if(roomIndex != -1){
+    if (c == '=')
+    {
+        int roomIndex = neighborRoom(rooms, player->room->index, roomsCount, y);
+        if (roomIndex != -1)
+        {
             printRoom(rooms[roomIndex]);
             getchar();
             clear();
