@@ -1,4 +1,4 @@
 *.o
 db.txt
 ./music
-
+./.vscode

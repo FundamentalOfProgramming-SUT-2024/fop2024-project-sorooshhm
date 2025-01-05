@@ -307,7 +307,8 @@ int preStartMenu(char type)
                         menu[2] = "Back to black";
                         menu[3] = "Shahre gham";
                         menu[4] = "Shaghayegh";
-                        int choice = handleMenuSelection(settingWin, menu, 5, 0);
+                        menu[5] = "Tornado of souls";
+                        int choice = handleMenuSelection(settingWin, menu, 6, 0);
                         if (choice == 0)
                         {
                             user->setting.music = "./music/1.mp3";
@@ -327,6 +328,10 @@ int preStartMenu(char type)
                         if (choice == 4)
                         {
                             user->setting.music = "./music/5.mp3";
+                        }
+                         if (choice == 5)
+                        {
+                            user->setting.music = "./music/6.mp3";
                         }
                         wclear(settingWin);
                         wrefresh(settingWin);
