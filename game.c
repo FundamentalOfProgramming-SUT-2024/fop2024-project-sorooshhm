@@ -1609,7 +1609,7 @@ void printGolds(Room *room)
         if (!room->golds[i].isUsed)
         {
             if (room->golds[i].type == 'g')
-                mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'💵');
+                mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'🪙');
             else
                 mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'💰');
         }
