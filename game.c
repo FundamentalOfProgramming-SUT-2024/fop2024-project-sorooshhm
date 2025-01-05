@@ -14,8 +14,8 @@
 #include "form.h"
 #include "db.h"
 
-#define MAX_HEIGHT 10
-#define MIN_HEIGHT 8
+#define MAX_HEIGHT 12
+#define MIN_HEIGHT 10
 #define MAX_WIDTH 16
 #define MIN_WIDTH 12
 
@@ -146,6 +146,12 @@ void resumeGame(User *user, Mix_Music *music)
     u = user;
     game = (Game *)malloc(sizeof(Game));
     loadGame(game, user);
+    for (int i = game->currentLevel + 1; i < 4; i++)
+    {
+        game->levels[i] = (Level *)malloc(sizeof(Level));
+        createLevel(game->levels[i], i);
+    }
+
     player = (Player *)malloc(sizeof(Player));
     player->passway = NULL;
     player->room = NULL;
@@ -178,14 +184,15 @@ void resumeGame(User *user, Mix_Music *music)
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
     // refresh();
+    if(!game->player->gunCount){
+        game->player->guns = (Gun*)malloc(30*sizeof(Gun));
+    }
+    if(!game->player->enchantCount){
+        game->player->enchants = (Enchant*)malloc(30*sizeof(Enchant));
+        
+    }
 
     player = game->player;
-
-    for (int i = game->currentLevel + 1; i < 4; i++)
-    {
-        game->levels[i] = (Level *)malloc(sizeof(Level));
-        createLevel(game->levels[i], i);
-    }
 
     showLevel(game->levels[game->currentLevel]);
 
@@ -1094,7 +1101,8 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     room->goldCount = 0;
     room->enchantCount = 0;
     room->gunCount = 0;
-
+    room->enchants = NULL;
+    room->guns = NULL;
     return room;
 }
 
@@ -1204,6 +1212,50 @@ void handleMove()
             player->foodCount--;
             player->health += 3;
             getchar();
+            wclear(menuWin);
+            free(menu);
+            clear();
+            refresh();
+            showLevel(level);
+        }
+        else if (c == 't')
+        {
+            if (player->enchantCount == 0)
+            {
+                continue;
+            }
+            WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
+
+            char **menu = (char **)malloc(player->enchantCount * sizeof(char *));
+            for (int i = 0; i < player->enchantCount; i++)
+            {
+                // if (!player.usedFood[i])
+                // {
+                menu[i] = malloc(20 * sizeof(char));
+                if (player->enchants[i].type == 'h')
+                {
+                    menu[i] = "Helath enchant ❤️‍🩹";
+                }
+                else if (player->enchants[i].type == 's')
+                {
+                    menu[i] = "Speed enchant ⚡";
+                }
+                else
+                {
+                    menu[i] = "Damage enchant ☠️";
+                }
+                // }
+            }
+
+            wattron(menuWin, A_BLINK);
+            mvwprintw(menuWin, 1, 25, "Enchant menu");
+            wrefresh(menuWin);
+            wattroff(menuWin, A_BLINK);
+
+            mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
+            wmove(menuWin, 3, 25);
+            wrefresh(menuWin);
+            int highlight = handleMenuSelection(menuWin, menu, player->enchantCount, 0);
             wclear(menuWin);
             free(menu);
             clear();
