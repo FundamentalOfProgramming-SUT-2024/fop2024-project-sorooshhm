@@ -37,6 +37,20 @@ typedef struct
 
 typedef struct
 {
+    char type;
+    bool isUsed;
+    Point cord;
+} Gun;
+
+typedef struct
+{
+    char type;
+    bool isUsed;
+    Point cord;
+} Enchant;
+
+typedef struct
+{
     int count;
     char type;
     bool isUsed;
@@ -69,11 +83,15 @@ typedef struct
     int index;
     Food *foods;
     Gold *golds;
+    Gun *guns;
+    Enchant *enchants;
     Trap *traps;
     Stair stair;
     int keyCount;
     int foodCount;
     int goldCount;
+    int gunCount;
+    int enchantCount;
     int trapCount;
     char type;
     int stairCount;
@@ -86,7 +104,11 @@ typedef struct
     int state; // 0 -> in passway ; 1 -> in room
     Room *room;
     Passway *passway;
+    Gun* guns;
+    Enchant* enchants;
     int foodCount;
+    int gunCount;
+    int enchantCount;
     int level;
     char *name;
     int acientKey;
