@@ -564,8 +564,23 @@ void showLevel(Level *level)
     }
 
     // show player
+    if (u->setting.color == 1)
+    {
+        attron(COLOR_PAIR(2));
+    }
+    else if (u->setting.color == 2)
+    {
+        attron(COLOR_PAIR(1));
+    }
     mvprintw(game->player->cord.y, game->player->cord.x, "@");
-
+    if (u->setting.color == 1)
+    {
+        attroff(COLOR_PAIR(2));
+    }
+    else if (u->setting.color == 2)
+    {
+        attroff(COLOR_PAIR(1));
+    }
     // show player info
     showPlayeInfo(*game->player);
     refresh();
@@ -1516,8 +1531,24 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         }
         player->cord.x = x;
         player->cord.y = y;
+        if (u->setting.color == 1)
+        {
+            attron(COLOR_PAIR(2));
+        }
+        else if (u->setting.color == 2)
+        {
+            attron(COLOR_PAIR(1));
+        }
         mvprintw(player->cord.y, player->cord.x, "@");
         refresh();
+        if (u->setting.color == 1)
+        {
+            attroff(COLOR_PAIR(2));
+        }
+        else if (u->setting.color == 2)
+        {
+            attroff(COLOR_PAIR(1));
+        }
     }
     int trapIndex = isTrap(player->room, cur);
     if (trapIndex != -1)
