@@ -184,12 +184,13 @@ void resumeGame(User *user, Mix_Music *music)
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
     // refresh();
-    if(!game->player->gunCount){
-        game->player->guns = (Gun*)malloc(30*sizeof(Gun));
+    if (!game->player->gunCount)
+    {
+        game->player->guns = (Gun *)malloc(30 * sizeof(Gun));
     }
-    if(!game->player->enchantCount){
-        game->player->enchants = (Enchant*)malloc(30*sizeof(Enchant));
-        
+    if (!game->player->enchantCount)
+    {
+        game->player->enchants = (Enchant *)malloc(30 * sizeof(Enchant));
     }
 
     player = game->player;
@@ -1256,6 +1257,58 @@ void handleMove()
             wmove(menuWin, 3, 25);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->enchantCount, 0);
+            wclear(menuWin);
+            free(menu);
+            clear();
+            refresh();
+            showLevel(level);
+        }
+        else if (c == 'g')
+        {
+            if (player->gunCount == 0)
+            {
+                continue;
+            }
+            WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
+
+            char **menu = (char **)malloc(player->gunCount * sizeof(char *));
+            for (int i = 0; i < player->enchantCount; i++)
+            {
+                // if (!player.usedFood[i])
+                // {
+                menu[i] = malloc(20 * sizeof(char));
+                if (player->enchants[i].type == 'g')
+                {
+                    menu[i] = "Gorz ⚒";
+                }
+                else if (player->enchants[i].type == 'k')
+                {
+                    menu[i] = "Khanjar 🗡️";
+                }
+                else if (player->guns[i].type == 'a')
+                {
+                    menu[i] = "Asa jadooyi 🪄";
+                }
+                else if (player->guns[i].type == 't')
+                {
+                    menu[i] = "➳";
+                }
+                else
+                {
+                    menu[i] = "Shamshir ⚔️";
+                }
+                // }
+            }
+
+            wattron(menuWin, A_BLINK);
+            mvwprintw(menuWin, 1, 25, "Gun menu");
+            wrefresh(menuWin);
+            wattroff(menuWin, A_BLINK);
+
+            mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
+            wmove(menuWin, 3, 25);
+            wrefresh(menuWin);
+            int highlight = handleMenuSelection(menuWin, menu, player->gunCount, 0);
             wclear(menuWin);
             free(menu);
             clear();
