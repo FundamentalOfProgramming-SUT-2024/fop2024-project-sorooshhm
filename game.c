@@ -82,8 +82,8 @@ void startGame(User *user, Mix_Music *music)
     player->foodCount = 0;
     player->gunCount = 0;
     player->enchantCount = 0;
-    player->guns = (Gun*)malloc(30*sizeof(Gun));
-    player->enchants = (Enchant*)malloc(30*sizeof(Enchant));
+    player->guns = (Gun *)malloc(30 * sizeof(Gun));
+    player->enchants = (Enchant *)malloc(30 * sizeof(Enchant));
     player->level = 0;
     player->acientKey = 0;
     player->brokenAcientKey = 0;
@@ -487,7 +487,7 @@ void createLevel(Level *level, int levelIndex)
                     rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
                     rooms[i]->traps[j].isVisible = false;
                 }
-                count = randomNumber(1, 6);
+                count = randomNumber(2, 6);
                 rooms[i]->enchantCount = count;
                 rooms[i]->enchants = (Enchant *)malloc(count * sizeof(Enchant));
                 for (int j = 0; j < count; j++)
@@ -1094,8 +1094,6 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     room->goldCount = 0;
     room->enchantCount = 0;
     room->gunCount = 0;
-    room->guns = NULL;
-    room->enchants = NULL;
 
     return room;
 }
@@ -1239,12 +1237,34 @@ Food findFood(Point p, Room *room)
 {
     for (int i = 0; i < room->foodCount; i++)
     {
-        if (room->foods[i].cord.x == p.x && room->foods[i].cord.y == p.y)
+        if (room->foods[i].cord.x == p.x && room->foods[i].cord.y == p.y && !room->foods[i].isUsed)
         {
             room->foods[i].isUsed = true;
             return room->foods[i];
         }
     }
+}
+Enchant findEnchant(Point p, Room *room)
+{
+    for (int i = 0; i < room->enchantCount; i++)
+    {
+        if (room->enchants[i].cord.x == p.x && room->enchants[i].cord.y == p.y && !room->enchants[i].isUsed)
+        {
+            room->enchants[i].isUsed = true;
+            return room->enchants[i];
+        }
+    }
+}
+int findGun(Point p, Room *room)
+{
+    for (int i = 0; i < room->gunCount; i++)
+    {
+        if (room->guns[i].cord.x == p.x && room->guns[i].cord.y == p.y && !room->guns[i].isUsed)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 int isTrap(Room *room, Point p)
@@ -1293,6 +1313,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         return;
     }
     char c = mvinch(y, x);
+    refresh();
     Point cur;
     cur.x = x;
     cur.y = y;
@@ -1593,7 +1614,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             }
         }
     }
-    if (c == '$')
+    if (c == '%')
     {
         if (player->foodCount < 5)
         {
@@ -1602,6 +1623,37 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             c = '.';
             player->room->foodCount--;
             showPlayeInfo(*player);
+        }
+    }
+    if (c == 'H' || c == 'S' || c == 'D')
+    {
+        mvprintw(1, 1, "click <p> to pick enchant");
+        refresh();
+        char ch = getchar();
+        mvprintw(1, 1, "                             ");
+        refresh();
+        if (ch == 'p')
+        {
+            Enchant e = findEnchant(cur, player->room);
+            player->enchants[player->enchantCount++] = e;
+            c = '.';
+        }
+    }
+    int gunIndex = findGun(cur, player->room);
+    if (gunIndex != -1)
+    {
+        mvprintw(1, 1, "click <p> to pick gun");
+        refresh();
+        char ch = getchar();
+        mvprintw(1, 1, "                             ");
+        refresh();
+        if (ch == 'p')
+        {
+            player->guns[player->gunCount++] = player->room->guns[gunIndex];
+            player->room->guns[gunIndex].isUsed = true;
+            c = '.';
+            mvprintw(y, x, "..");
+            refresh();
         }
     }
     if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
@@ -1663,7 +1715,7 @@ void printFoods(Room *room)
     for (int i = 0; i < room->foodCount; i++)
     {
         if (!room->foods[i].isUsed)
-            mvprintw(room->foods[i].cord.y, room->foods[i].cord.x, "$");
+            mvprintw(room->foods[i].cord.y, room->foods[i].cord.x, "%%");
     }
     refresh();
 }
@@ -1722,6 +1774,22 @@ void printGuns(Room *room)
     }
     refresh();
 }
+void printEnchants(Room *room)
+{
+    for (int i = 0; i < room->enchantCount; i++)
+    {
+        if (!room->enchants[i].isUsed)
+        {
+            if (room->enchants[i].type == 'h')
+                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "H");
+            else if (room->enchants[i].type == 's')
+                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "S");
+            else
+                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "D");
+        }
+    }
+    refresh();
+}
 void printRoom(Room *room)
 {
     int x, y, width, height;
@@ -1768,6 +1836,7 @@ void printRoom(Room *room)
     printWindow(room);
     printGolds(room);
     printGuns(room);
+    printEnchants(room);
     if (room->keyCount)
     {
         attron(COLOR_PAIR(3));
