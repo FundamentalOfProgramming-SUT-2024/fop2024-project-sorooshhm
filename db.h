@@ -10,5 +10,5 @@ int userExixst(char *username);
 void insertUser(User *user);
 void updateUser(User *user);
 void saveGame(Game *game, User *user);
-void loadGame(Game *game, User *user);
+int loadGame(Game *game, User *user);
 #endif

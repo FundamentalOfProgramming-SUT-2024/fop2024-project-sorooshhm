@@ -17,7 +17,7 @@
 #define MAX_HEIGHT 12
 #define MIN_HEIGHT 10
 #define MAX_WIDTH 16
-#define MIN_WIDTH 12
+#define MIN_WIDTH 10
 
 void handleMove();
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y);
@@ -145,7 +145,11 @@ void resumeGame(User *user, Mix_Music *music)
 
     u = user;
     game = (Game *)malloc(sizeof(Game));
-    loadGame(game, user);
+    int check = loadGame(game, user);
+    if (!check)
+    {
+        return;
+    }
     for (int i = game->currentLevel + 1; i < 4; i++)
     {
         game->levels[i] = (Level *)malloc(sizeof(Level));
@@ -248,9 +252,9 @@ void win()
     sleep(5);
     wclear(win);
     clear();
-    char *filename = "./games/";
-    strcat(filename,u->username);
-    remove(filename);
+    // char *filename = "./games/";
+    // strcat(filename, u->username);
+    // remove(filename);
 }
 
 int changeLevel(Stair stair)
@@ -1275,16 +1279,16 @@ void handleMove()
             WINDOW *menuWin = creaetMenuWindow(25, maxX / 2, maxY / 2 - 15, maxX / 4);
 
             char **menu = (char **)malloc(player->gunCount * sizeof(char *));
-            for (int i = 0; i < player->enchantCount; i++)
+            for (int i = 0; i < player->gunCount; i++)
             {
                 // if (!player.usedFood[i])
                 // {
                 menu[i] = malloc(20 * sizeof(char));
-                if (player->enchants[i].type == 'g')
+                if (player->guns[i].type == 'g')
                 {
                     menu[i] = "Gorz ⚒";
                 }
-                else if (player->enchants[i].type == 'k')
+                else if (player->guns[i].type == 'k')
                 {
                     menu[i] = "Khanjar 🗡️";
                 }
@@ -1317,6 +1321,9 @@ void handleMove()
             clear();
             refresh();
             showLevel(level);
+        }
+        else if(c=='f'){
+            win_state = 1;
         }
     }
 }

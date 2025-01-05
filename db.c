@@ -235,7 +235,7 @@ void saveGame(Game *game, User *user)
     fclose(file);
 }
 
-void loadGame(Game *game, User *user)
+int loadGame(Game *game, User *user)
 {
     char filename[50] = "./games/";
     strcat(filename, user->username);
@@ -243,7 +243,7 @@ void loadGame(Game *game, User *user)
     if (file == NULL)
     {
         perror("Error opening file");
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     fread(&game->currentLevel, sizeof(int), 1, file);
@@ -340,4 +340,5 @@ void loadGame(Game *game, User *user)
     player->name = user->username;
     game->player = player;
     fclose(file);
+    return 1;
 }

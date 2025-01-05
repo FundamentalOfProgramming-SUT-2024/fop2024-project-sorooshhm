@@ -281,16 +281,19 @@ int preStartMenu(char type)
                         if (i == 0)
                         {
                             wattron(scoreWin, COLOR_PAIR(6));
+                            wattron(scoreWin , A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥇");
                         }
                         else if (i == 1)
                         {
                             wattron(scoreWin, COLOR_PAIR(7));
+                            wattron(scoreWin , A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥈");
                         }
                         else if (i == 2)
                         {
                             wattron(scoreWin, COLOR_PAIR(8));
+                            wattron(scoreWin , A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥉");
                         }
                         else
@@ -315,14 +318,17 @@ int preStartMenu(char type)
                         if (i == 0)
                         {
                             wattroff(scoreWin, COLOR_PAIR(6));
+                            wattron(scoreWin , A_ITALIC);
                         }
                         else if (i == 1)
                         {
                             wattroff(scoreWin, COLOR_PAIR(7));
+                            wattroff(scoreWin , A_ITALIC);
                         }
                         else if (i == 2)
                         {
                             wattroff(scoreWin, COLOR_PAIR(8));
+                            wattroff(scoreWin , A_ITALIC);
                         }
                         if (!strcmp(users[i]->username ,user->username))
                         {
