@@ -5,6 +5,7 @@
 #include "game.h"
 
 User *findUser(char *username);
+User **find(int *);
 int userExixst(char *username);
 void insertUser(User *user);
 void updateUser(User *user);

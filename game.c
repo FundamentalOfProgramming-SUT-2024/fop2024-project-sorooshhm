@@ -82,8 +82,8 @@ void startGame(User *user, Mix_Music *music)
     player->foodCount = 0;
     player->gunCount = 0;
     player->enchantCount = 0;
-    player->guns = (Gun *)malloc(30 * sizeof(Gun));
-    player->enchants = (Enchant *)malloc(30 * sizeof(Enchant));
+    player->guns = (Gun *)malloc(100 * sizeof(Gun));
+    player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
     player->level = 0;
     player->acientKey = 0;
     player->brokenAcientKey = 0;
@@ -186,11 +186,11 @@ void resumeGame(User *user, Mix_Music *music)
     // refresh();
     if (!game->player->gunCount)
     {
-        game->player->guns = (Gun *)malloc(30 * sizeof(Gun));
+        game->player->guns = (Gun *)malloc(100 * sizeof(Gun));
     }
     if (!game->player->enchantCount)
     {
-        game->player->enchants = (Enchant *)malloc(30 * sizeof(Enchant));
+        game->player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
     }
 
     player = game->player;
@@ -248,6 +248,9 @@ void win()
     sleep(5);
     wclear(win);
     clear();
+    char *filename = "./games/";
+    strcat(filename,u->username);
+    remove(filename);
 }
 
 int changeLevel(Stair stair)
@@ -1225,7 +1228,7 @@ void handleMove()
             {
                 continue;
             }
-            WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
+            WINDOW *menuWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
 
             char **menu = (char **)malloc(player->enchantCount * sizeof(char *));
             for (int i = 0; i < player->enchantCount; i++)
@@ -1269,7 +1272,7 @@ void handleMove()
             {
                 continue;
             }
-            WINDOW *menuWin = creaetMenuWindow(15, maxX / 2, maxY / 2 - 15, maxX / 4);
+            WINDOW *menuWin = creaetMenuWindow(25, maxX / 2, maxY / 2 - 15, maxX / 4);
 
             char **menu = (char **)malloc(player->gunCount * sizeof(char *));
             for (int i = 0; i < player->enchantCount; i++)

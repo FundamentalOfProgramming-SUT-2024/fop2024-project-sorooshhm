@@ -12,6 +12,10 @@
 #include "db.h"
 #include "game.h"
 
+#define GOLD_COLOR 100
+#define SILVER_COLOR 101
+#define BRONZE_COLOR 102
+
 User *user;
 int maxY, maxX;
 
@@ -23,11 +27,19 @@ int main()
     setlocale(LC_ALL, "");
     initscr();
     start_color();
+    init_color(GOLD_COLOR, 1000, 843, 0);
+    init_color(SILVER_COLOR, 750, 750, 750);
+    init_color(BRONZE_COLOR, 804, 498, 196);
+
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
     init_pair(2, COLOR_BLUE, COLOR_BLACK);
     init_pair(3, COLOR_YELLOW, COLOR_BLACK);
     init_pair(4, COLOR_RED, COLOR_BLACK);
     init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(6, GOLD_COLOR, COLOR_BLACK);
+    init_pair(7, SILVER_COLOR, COLOR_BLACK);
+    init_pair(8, BRONZE_COLOR, COLOR_BLACK);
+    init_pair(9, COLOR_CYAN, COLOR_BLACK);
     // noecho();
     user = (User *)malloc(sizeof(User));
     cbreak();
@@ -181,6 +193,13 @@ int main()
     return 0;
 }
 
+int compareUsersByScore(const void *a, const void *b)
+{
+    User *userA = *(User **)a;
+    User *userB = *(User **)b;
+    return (userB->score - userA->score);
+}
+
 int preStartMenu(char type)
 {
     while (1)
@@ -197,7 +216,7 @@ int preStartMenu(char type)
 
             mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
             wmove(menuWin, 3, 25);
-
+            noecho();
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, 7, 0);
             printw("You choose %s", menu[highlight]);
@@ -217,6 +236,136 @@ int preStartMenu(char type)
             }
             else if (highlight == 2)
             {
+                int count = 0;
+                int page = 0;
+                int num = 3;
+                User **users = find(&count);
+                int maxPage = count / num;
+                if (maxPage * num != count)
+                {
+                    maxPage++;
+                }
+                qsort(users, count, sizeof(User *), compareUsersByScore);
+                while (1)
+                {
+                    WINDOW *scoreWin = creaetMenuWindow(30, maxX / 2, maxY / 2 - 15, maxX / 4);
+                    wattron(scoreWin, A_BLINK);
+                    mvwprintw(scoreWin, 1, 28, "Score Board");
+                    wrefresh(scoreWin);
+                    wattroff(scoreWin, A_BLINK);
+
+                    mvwprintw(scoreWin, 2, 1, "----------------------------------------------------------------------");
+                    wattron(scoreWin , COLOR_PAIR(6));
+                    mvwprintw(scoreWin , 3 , 28,"  _________");
+                    mvwprintw(scoreWin , 4 , 28," |         |");
+                    mvwprintw(scoreWin , 5, 28,"(| %s" , users[0]->username);
+                    mvwprintw(scoreWin , 5 , 39,"|)");
+                    mvwprintw(scoreWin , 6 , 28," |   #1    |");
+                    mvwprintw(scoreWin , 7 , 28,"  \\       /");
+                    mvwprintw(scoreWin , 8 , 28,"   `-----'");
+                    mvwprintw(scoreWin , 9 , 28,"   _|___|_");
+                    wrefresh(scoreWin);
+
+                    wattroff(scoreWin , COLOR_PAIR(6));
+                    wrefresh(scoreWin);
+                    mvwprintw(scoreWin, 11, 1, "----------------------------------------------------------------------");
+                    mvwprintw(scoreWin, 12, 2, "   |   Username   |   Score   |   Golds   |   Games   |  Experience ");
+                    mvwprintw(scoreWin, 13, 1, "----------------------------------------------------------------------");
+                    for (int i = (page * num); i < (page + 1) * num; i++)
+                    {
+                        if (i >= count)
+                        {
+                            break;
+                        }
+                        int y = 14 + 2 * (i - page * num);
+                        if (i == 0)
+                        {
+                            wattron(scoreWin, COLOR_PAIR(6));
+                            mvwprintw(scoreWin, y, 2, "🥇");
+                        }
+                        else if (i == 1)
+                        {
+                            wattron(scoreWin, COLOR_PAIR(7));
+                            mvwprintw(scoreWin, y, 2, "🥈");
+                        }
+                        else if (i == 2)
+                        {
+                            wattron(scoreWin, COLOR_PAIR(8));
+                            mvwprintw(scoreWin, y, 2, "🥉");
+                        }
+                        else
+                        {
+                            if (!strcmp(users[i]->username ,user->username))
+                            {
+                                wattron(scoreWin, COLOR_PAIR(9));
+                            }
+                            mvwprintw(scoreWin, y, 2, "%d", i + 1);
+                        }
+                        mvwprintw(scoreWin, y, 5, "|");
+                        mvwprintw(scoreWin, y, 6, "   %s", users[i]->username);
+                        mvwprintw(scoreWin, y, 20, "|");
+                        mvwprintw(scoreWin, y, 21, "   %d", users[i]->score);
+                        mvwprintw(scoreWin, y, 32, "|");
+                        mvwprintw(scoreWin, y, 33, "   %d", users[i]->golds);
+                        mvwprintw(scoreWin, y, 44, "|");
+                        mvwprintw(scoreWin, y, 45, "   %d", users[i]->games);
+                        mvwprintw(scoreWin, y, 56, "|");
+                        mvwprintw(scoreWin, y, 57, "   %lld min", users[i]->gameplay / 60);
+                        mvwprintw(scoreWin, y + 1, 1, "----------------------------------------------------------------------");
+                        if (i == 0)
+                        {
+                            wattroff(scoreWin, COLOR_PAIR(6));
+                        }
+                        else if (i == 1)
+                        {
+                            wattroff(scoreWin, COLOR_PAIR(7));
+                        }
+                        else if (i == 2)
+                        {
+                            wattroff(scoreWin, COLOR_PAIR(8));
+                        }
+                        if (!strcmp(users[i]->username ,user->username))
+                        {
+                            wattroff(scoreWin, COLOR_PAIR(9));
+                        }
+                    }
+                    mvwprintw(scoreWin, 28, 32, "< %d >", page + 1);
+                    wrefresh(scoreWin);
+                    keypad(scoreWin, TRUE);
+                    keypad(stdscr, TRUE);
+                    int c = getch();
+                    refresh();
+                    if (c == KEY_RIGHT)
+                    {
+                        if (page != 0)
+                        {
+                            page--;
+                        }
+                    }
+                    else if (c == KEY_LEFT)
+                    {
+                        if (page != maxPage - 1)
+                        {
+                            page++;
+                        }
+                    }
+                    else if (c == 27)
+                    {
+                        wclear(scoreWin);
+                        clear();
+                        refresh();
+                        break;
+                    }
+                    wclear(scoreWin);
+                    clear();
+                    refresh();
+                    usleep(500);
+                }
+                for (int i = 0; i < count; i++)
+                {
+                    free(users[i]);
+                }
+                free(users);
             }
             else if (highlight == 3)
             {
@@ -329,7 +478,7 @@ int preStartMenu(char type)
                         {
                             user->setting.music = "./music/5.mp3";
                         }
-                         if (choice == 5)
+                        if (choice == 5)
                         {
                             user->setting.music = "./music/6.mp3";
                         }
@@ -356,7 +505,7 @@ int preStartMenu(char type)
                 mvwprintw(profileWin, 8, 20, "Games : %d", user->games);
                 mvwprintw(profileWin, 10, 20, "Golds : %d", user->golds);
                 mvwprintw(profileWin, 12, 20, "Score : %d", user->score);
-                mvwprintw(profileWin, 14, 20, "Gameplay : %lld min", user->gameplay/60);
+                mvwprintw(profileWin, 14, 20, "Gameplay : %lld min", user->gameplay / 60);
                 wrefresh(profileWin);
                 while (1)
                 {
@@ -433,7 +582,8 @@ int preStartMenu(char type)
 }
 Mix_Music *playMusic(char *path)
 {
-    if(path == NULL){
+    if (path == NULL)
+    {
         path = "./music/1.mp3";
     }
     if (SDL_Init(SDL_INIT_AUDIO) < 0)

@@ -73,6 +73,31 @@ User *findUser(char *username)
     return user;
 }
 
+User **find(int *userCount)
+{
+    char **usernameList = (char **)malloc(100 * sizeof(char *));
+    for (int i = 0; i < 100; i++)
+    {
+        usernameList[i] = (char *)malloc(100 * sizeof(char));
+    }
+    int index = 0;
+
+    FILE *usernames = fopen("./users/usernames.db", "r");
+    while (fgets(usernameList[index], 100, usernames))
+    {
+        usernameList[index][strlen(usernameList[index]) - 1] = '\0';
+        index++;
+    }
+    fclose(usernames);
+    User **userList = (User **)malloc((index) * sizeof(User *));
+    for (int i = 0; i < index; i++)
+    {
+        userList[i] = findUser(usernameList[i]);
+    }
+    *userCount = index;
+    return userList;
+}
+
 void insertUser(User *user)
 {
     FILE *usernames = fopen("./users/usernames.db", "a");
