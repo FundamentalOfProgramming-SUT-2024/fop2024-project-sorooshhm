@@ -172,6 +172,10 @@ void saveGame(Game *game, User *user)
             fwrite(room->traps, sizeof(Trap), room->trapCount, file);
             fwrite(&room->goldCount, sizeof(int), 1, file);
             fwrite(room->golds, sizeof(Gold), room->goldCount, file);
+            fwrite(&room->gunCount, sizeof(int), 1, file);
+            fwrite(room->guns, sizeof(Gun), room->gunCount, file);
+            fwrite(&room->enchantCount, sizeof(int), 1, file);
+            fwrite(room->enchants, sizeof(Enchant), room->enchantCount, file);
             fwrite(&room->stair, sizeof(Stair), 1, file);
         }
 
@@ -195,6 +199,10 @@ void saveGame(Game *game, User *user)
     fwrite(&player->acientKey, sizeof(int), 1, file);
     fwrite(&player->brokenAcientKey, sizeof(int), 1, file);
     fwrite(&player->foodCount, sizeof(int), 1, file);
+    fwrite(&player->gunCount, sizeof(int), 1, file);
+    fwrite(player->guns, sizeof(Gun), player->gunCount, file);
+    fwrite(&player->enchantCount, sizeof(int), 1, file);
+    fwrite(player->enchants, sizeof(Enchant), player->enchantCount, file);
     fwrite(&player->level, sizeof(int), 1, file);
     fwrite(&player->acientKey, sizeof(int), 1, file);
     fwrite(&player->brokenAcientKey, sizeof(int), 1, file);
@@ -252,6 +260,14 @@ void loadGame(Game *game, User *user)
 
             room->golds = (Gold *)malloc(sizeof(Gold) * room->goldCount);
             fread(room->golds, sizeof(Gold), room->goldCount, file);
+            fread(&room->gunCount, sizeof(int), 1, file);
+
+            room->guns = (Gun *)malloc(sizeof(Gun) * room->gunCount);
+            fread(room->guns, sizeof(Gun), room->gunCount, file);
+            fread(&room->enchantCount, sizeof(int), 1, file);
+
+            room->enchants = (Enchant *)malloc(sizeof(Enchant) * room->enchantCount);
+            fread(room->enchants, sizeof(Enchant), room->enchantCount, file);
             fread(&room->stair, sizeof(Stair), 1, file);
 
             level->rooms[j] = room;
@@ -284,6 +300,14 @@ void loadGame(Game *game, User *user)
     fread(&player->acientKey, sizeof(int), 1, file);
     fread(&player->brokenAcientKey, sizeof(int), 1, file);
     fread(&player->foodCount, sizeof(int), 1, file);
+    fread(&player->gunCount, sizeof(int), 1, file);
+    player->guns = (Gun *)malloc(sizeof(Gun) * player->gunCount);
+    fread(player->guns, sizeof(Gun), player->gunCount, file);
+
+    fread(&player->enchantCount, sizeof(int), 1, file);
+    player->enchants = (Enchant *)malloc(sizeof(Enchant) * player->enchantCount);
+    fread(player->enchants, sizeof(Enchant), player->enchantCount, file);
+
     fread(&player->level, sizeof(int), 1, file);
     fread(&player->acientKey, sizeof(int), 1, file);
     fread(&player->brokenAcientKey, sizeof(int), 1, file);

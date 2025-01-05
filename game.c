@@ -80,6 +80,10 @@ void startGame(User *user, Mix_Music *music)
     player->passway = NULL;
     player->health = 40;
     player->foodCount = 0;
+    player->gunCount = 0;
+    player->enchantCount = 0;
+    player->guns = (Gun*)malloc(30*sizeof(Gun));
+    player->enchants = (Enchant*)malloc(30*sizeof(Enchant));
     player->level = 0;
     player->acientKey = 0;
     player->brokenAcientKey = 0;
@@ -373,6 +377,7 @@ void createLevel(Level *level, int levelIndex)
         }
         else
         {
+            // normal room
             if (rndm % 8 <= 4)
             {
                 int count = randomNumber(2, 4);
@@ -414,12 +419,66 @@ void createLevel(Level *level, int levelIndex)
                         rooms[i]->golds[j].count = 5;
                     }
                 }
+                count = randomNumber(0, 2);
+                rooms[i]->gunCount = count;
+                rooms[i]->guns = (Gun *)malloc(count * sizeof(Gun));
+                for (int j = 0; j < count; j++)
+                {
+                    int num = rand();
+                    rooms[i]->guns[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
+                    rooms[i]->guns[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
+                    rooms[i]->guns[j].isUsed = false;
+                    if (num % 5 == 4)
+                    {
+                        rooms[i]->guns[j].type = 'g'; // gorz
+                    }
+                    else if ((num % 5 == 3))
+                    {
+                        rooms[i]->guns[j].type = 'k'; // khanjar
+                    }
+                    else if (num % 5 == 2)
+                    {
+                        rooms[i]->guns[j].type = 'a'; // asa
+                    }
+                    else if (num % 5 == 1)
+                    {
+                        rooms[i]->guns[j].type = 't'; // tir
+                    }
+                    else
+                    {
+                        rooms[i]->guns[j].type = 's'; // shamshir
+                    }
+                }
+                count = randomNumber(0, 2);
+                rooms[i]->enchantCount = count;
+                rooms[i]->enchants = (Enchant *)malloc(count * sizeof(Enchant));
+                for (int j = 0; j < count; j++)
+                {
+                    int num = rand();
+                    rooms[i]->enchants[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
+                    rooms[i]->enchants[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
+                    rooms[i]->enchants[j].isUsed = false;
+                    if (num % 3 == 2)
+                    {
+                        rooms[i]->enchants[j].type = 'h'; // health
+                    }
+                    else if (num % 3 == 1)
+                    {
+                        rooms[i]->enchants[j].type = 's'; // speed
+                    }
+                    else
+                    {
+                        rooms[i]->enchants[j].type = 'd'; // damage
+                    }
+                }
+
                 rooms[i]->type = 'n';
             }
+            // enchant room
             else if (((i == 0 && levelIndex != 0) || i == roomsCounts - 1) && rndm % 8 > 4)
             {
                 rooms[i]->foodCount = 0;
-                int count = randomNumber(1, 4);
+                int count = randomNumber(1, 3);
                 rooms[i]->trapCount = count;
                 rooms[i]->traps = (Trap *)malloc(count * sizeof(Trap));
                 for (int j = 0; j < count; j++)
@@ -428,8 +487,31 @@ void createLevel(Level *level, int levelIndex)
                     rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
                     rooms[i]->traps[j].isVisible = false;
                 }
+                count = randomNumber(1, 6);
+                rooms[i]->enchantCount = count;
+                rooms[i]->enchants = (Enchant *)malloc(count * sizeof(Enchant));
+                for (int j = 0; j < count; j++)
+                {
+                    int num = rand();
+                    rooms[i]->enchants[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
+                    rooms[i]->enchants[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
+                    rooms[i]->enchants[j].isUsed = false;
+                    if (num % 3 == 2)
+                    {
+                        rooms[i]->enchants[j].type = 'h'; // health
+                    }
+                    else if (num % 3 == 1)
+                    {
+                        rooms[i]->enchants[j].type = 's'; // speed
+                    }
+                    else
+                    {
+                        rooms[i]->enchants[j].type = 'd'; // damage
+                    }
+                }
                 rooms[i]->type = 't';
             }
+            // another normal room
             else
             {
                 int count = randomNumber(2, 4);
@@ -1010,6 +1092,10 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     room->foodCount = 0;
     room->trapCount = 0;
     room->goldCount = 0;
+    room->enchantCount = 0;
+    room->gunCount = 0;
+    room->guns = NULL;
+    room->enchants = NULL;
 
     return room;
 }
@@ -1616,7 +1702,26 @@ void printGolds(Room *room)
     }
     refresh();
 }
-
+void printGuns(Room *room)
+{
+    for (int i = 0; i < room->gunCount; i++)
+    {
+        if (!room->guns[i].isUsed)
+        {
+            if (room->guns[i].type == 'g')
+                mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "%lc", L'⚒');
+            else if (room->guns[i].type == 'k')
+                mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "🗡️");
+            else if (room->guns[i].type == 'a')
+                mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "%lc", L'🪄');
+            else if (room->guns[i].type == 't')
+                mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "%lc", L'➳');
+            else
+                mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "⚔️");
+        }
+    }
+    refresh();
+}
 void printRoom(Room *room)
 {
     int x, y, width, height;
@@ -1662,6 +1767,7 @@ void printRoom(Room *room)
     printStair(room);
     printWindow(room);
     printGolds(room);
+    printGuns(room);
     if (room->keyCount)
     {
         attron(COLOR_PAIR(3));

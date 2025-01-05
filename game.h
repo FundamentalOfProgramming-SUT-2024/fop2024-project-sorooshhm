@@ -37,7 +37,7 @@ typedef struct
 
 typedef struct
 {
-    char type;
+    char type; // g -> gorz; k -> khanjar; a -> asa; t -> tir; s-> shamshir
     bool isUsed;
     Point cord;
 } Gun;
