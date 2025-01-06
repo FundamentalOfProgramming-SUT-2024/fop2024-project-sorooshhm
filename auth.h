@@ -23,7 +23,7 @@ typedef struct
 
 char isAuthorized(User **);
 int getUserId();
-User *login(char *, char *, char **);
+User *login(char *, char *, char ** , int);
 User *registerUser(char *username, char *password, char *email, char **message);
 void logout();
 #endif

@@ -34,7 +34,7 @@ char isAuthorized(User **user)
 
 int getUserId() {};
 
-User *login(char *username, char *password, char **message)
+User *login(char *username, char *password, char **message , int forget)
 {
     User *user = findUser(username);
     if (user == NULL)
@@ -42,7 +42,7 @@ User *login(char *username, char *password, char **message)
         *message = "Username is wrong";
         return NULL;
     }
-    if (hash(password) != user->password)
+    if (!forget && hash(password) != user->password)
     {
         *message = "Password is wrong";
         return NULL;

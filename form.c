@@ -78,6 +78,19 @@ char **handleInput(WINDOW *win, int count, char **headers, int parentY, int pare
                 }
             }
         }
+        else if (count == 2)
+        {
+            if (state == 1)
+            {
+                if (strcmp(result[1], "FORGOT") == 0)
+                {
+                    mvprintw(parentY + y + 5 * state + 5, parentX + x + 2, "Enter the cheetcode");
+                    refresh();
+                    noecho();
+                    getstr(result[1]);
+                }
+            }
+        }
     }
 
     return result;
@@ -88,7 +101,7 @@ char **createHedares(char type)
     {
         char **headers = (char **)malloc(2 * sizeof(char *));
         headers[0] = "Username";
-        headers[1] = "Password";
+        headers[1] = "Password (FORGOT for forgot)";
         return headers;
     }
     if (type == 'R')

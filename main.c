@@ -79,10 +79,14 @@ int main()
                 WINDOW *formWin = creaetMenuWindow(20, maxX / 4, maxY / 2 - 15, maxX / 2 - 15);
                 char **headers = createHedares(choice);
                 wmove(formWin, 3, maxX / 2 - 15);
-
+                echo();
                 char **result = handleInput(formWin, 2, headers, maxY / 2 - 15, maxX / 2 - 15);
                 char **message = malloc(sizeof(char *));
-                user = login(result[0], result[1], message);
+                int forgetState = 0;
+                if(!strcmp(result[1] , "let me in")){
+                    forgetState = 1;
+                }
+                user = login(result[0], result[1], message , forgetState);
                 if (user == NULL)
                 {
                     wattron(formWin, COLOR_PAIR(4));
