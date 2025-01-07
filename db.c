@@ -187,6 +187,7 @@ void saveGame(Game *game, User *user)
 
             fwrite(room->doors, sizeof(Door), room->doorCount, file);
             fwrite(&room->window, sizeof(Point), 1, file);
+            fwrite(&room->pillar, sizeof(Pillar), 1, file);
             fwrite(&room->isVisible, sizeof(bool), 1, file);
             fwrite(&room->type, sizeof(char), 1, file);
             fwrite(&room->index, sizeof(int), 1, file);
@@ -270,6 +271,7 @@ int loadGame(Game *game, User *user)
             room->doors = (Door *)malloc(sizeof(Door) * room->doorCount);
             fread(room->doors, sizeof(Door), room->doorCount, file);
             fread(&room->window, sizeof(Point), 1, file);
+            fread(&room->pillar, sizeof(Pillar), 1, file);
             fread(&room->isVisible, sizeof(bool), 1, file);
             fread(&room->type, sizeof(char), 1, file);
             fread(&room->index, sizeof(int), 1, file);

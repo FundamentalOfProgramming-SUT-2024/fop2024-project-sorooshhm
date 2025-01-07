@@ -37,6 +37,11 @@ typedef struct
 
 typedef struct
 {
+    Point cord;
+} Pillar;
+
+typedef struct
+{
     char type; // g -> gorz; k -> khanjar; a -> asa; t -> tir; s-> shamshir
     bool isUsed;
     Point cord;
@@ -82,6 +87,7 @@ typedef struct
     bool isVisible;
     int index;
     Food *foods;
+    Pillar pillar;
     Gold *golds;
     Gun *guns;
     Enchant *enchants;

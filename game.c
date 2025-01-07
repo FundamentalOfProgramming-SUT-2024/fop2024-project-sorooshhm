@@ -1099,6 +1099,13 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
         room->window.x = room->cord.x + room->width;
         room->window.y = room->cord.y + 2 + randomNumber(0, room->height - 4);
     }
+    room->pillar.cord.x = 0;
+    room->pillar.cord.y = 0;
+    if (num % 5 <= 1)
+    {
+        room->pillar.cord.x = randomNumber(room->cord.x + 2, room->cord.x + room->width - 2);
+        room->pillar.cord.y = randomNumber(room->cord.y + 3, room->cord.y + room->height - 3);
+    }
     else
     {
         room->window.x = 0;
@@ -1322,7 +1329,8 @@ void handleMove()
             refresh();
             showLevel(level);
         }
-        else if(c=='f'){
+        else if (c == 'f')
+        {
             win_state = 1;
         }
     }
@@ -1432,6 +1440,10 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     Point cur;
     cur.x = x;
     cur.y = y;
+    if (c == 'O')
+    {
+        return;
+    }
     int goldIndex = isGold(player->room, cur);
     if (goldIndex != -1)
     {
@@ -1905,6 +1917,13 @@ void printEnchants(Room *room)
     }
     refresh();
 }
+void printPillars(Room *room)
+{
+    if (room->pillar.cord.x != room->pillar.cord.y != 0)
+    {
+        mvprintw(room->pillar.cord.y, room->pillar.cord.x, "O");
+    }
+}
 void printRoom(Room *room)
 {
     int x, y, width, height;
@@ -1952,6 +1971,7 @@ void printRoom(Room *room)
     printGolds(room);
     printGuns(room);
     printEnchants(room);
+    printPillars(room);
     if (room->keyCount)
     {
         attron(COLOR_PAIR(3));
