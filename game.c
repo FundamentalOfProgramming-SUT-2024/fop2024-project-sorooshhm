@@ -105,7 +105,10 @@ void startGame(User *user, Mix_Music *music)
 
     pthread_cancel(damageThread);
     // saving the game
-    saveGame(game, user);
+    if (u->isAuth)
+    {
+        saveGame(game, user);
+    }
 
     clear();
     refresh();
@@ -213,7 +216,8 @@ void resumeGame(User *user, Mix_Music *music)
 
     pthread_cancel(damageThread);
     // saving the game
-    saveGame(game, user);
+    if (u->isAuth)
+        saveGame(game, user);
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < game->levels[i]->roomsCount; j++)
@@ -237,13 +241,16 @@ void resumeGame(User *user, Mix_Music *music)
 
 void win()
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    u->golds += player->gold;
-    u->score += (player->gold * u->setting.level) / 5;
-    u->games += 1;
-    long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-    u->gameplay += (newmil - milliseconds) / 1000;
+    if (u->isAuth)
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        u->golds += player->gold;
+        u->score += (player->gold * u->setting.level) / 5;
+        u->games += 1;
+        long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+        u->gameplay += (newmil - milliseconds) / 1000;
+    }
 
     WINDOW *win = newwin(maxY, maxX, 0, 0);
     mvwprintw(win, maxY / 2, 50, "You won !!!! %lc", L'😍');
@@ -603,12 +610,15 @@ void createLevel(Level *level, int levelIndex)
 
 void lose()
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    u->golds += player->gold;
-    u->score += (player->gold * u->setting.level) / 5;
-    long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-    u->gameplay += (newmil - milliseconds) / 1000;
+    if (u->isAuth)
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        u->golds += player->gold;
+        u->score += (player->gold * u->setting.level) / 5;
+        long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+        u->gameplay += (newmil - milliseconds) / 1000;
+    }
 
     WINDOW *lostWin = newwin(maxY, maxX, 0, 0);
     mvwprintw(lostWin, maxY / 2, 50, "RIP dear %s :(( ...", player->name);

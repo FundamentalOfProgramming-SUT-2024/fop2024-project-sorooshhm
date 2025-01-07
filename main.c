@@ -83,10 +83,11 @@ int main()
                 char **result = handleInput(formWin, 2, headers, maxY / 2 - 15, maxX / 2 - 15);
                 char **message = malloc(sizeof(char *));
                 int forgetState = 0;
-                if(!strcmp(result[1] , "let me in")){
+                if (!strcmp(result[1], "let me in"))
+                {
                     forgetState = 1;
                 }
-                user = login(result[0], result[1], message , forgetState);
+                user = login(result[0], result[1], message, forgetState);
                 if (user == NULL)
                 {
                     wattron(formWin, COLOR_PAIR(4));
@@ -175,7 +176,8 @@ int main()
             startGame(user, music);
             clear();
             refresh();
-            updateUser(user);
+            if (user->isAuth)
+                updateUser(user);
         }
         if (choice == 1)
         {
@@ -184,7 +186,8 @@ int main()
             resumeGame(user, music);
             clear();
             refresh();
-            updateUser(user);
+            if (user->isAuth)
+                updateUser(user);
         }
         else if (choice == 6)
         {
@@ -259,18 +262,18 @@ int preStartMenu(char type)
                     wattroff(scoreWin, A_BLINK);
 
                     mvwprintw(scoreWin, 2, 1, "----------------------------------------------------------------------");
-                    wattron(scoreWin , COLOR_PAIR(6));
-                    mvwprintw(scoreWin , 3 , 28,"  _________");
-                    mvwprintw(scoreWin , 4 , 28," |         |");
-                    mvwprintw(scoreWin , 5, 28,"(| %s" , users[0]->username);
-                    mvwprintw(scoreWin , 5 , 39,"|)");
-                    mvwprintw(scoreWin , 6 , 28," |   #1    |");
-                    mvwprintw(scoreWin , 7 , 28,"  \\       /");
-                    mvwprintw(scoreWin , 8 , 28,"   `-----'");
-                    mvwprintw(scoreWin , 9 , 28,"   _|___|_");
+                    wattron(scoreWin, COLOR_PAIR(6));
+                    mvwprintw(scoreWin, 3, 28, "  _________");
+                    mvwprintw(scoreWin, 4, 28, " |         |");
+                    mvwprintw(scoreWin, 5, 28, "(| %s", users[0]->username);
+                    mvwprintw(scoreWin, 5, 39, "|)");
+                    mvwprintw(scoreWin, 6, 28, " |   #1    |");
+                    mvwprintw(scoreWin, 7, 28, "  \\       /");
+                    mvwprintw(scoreWin, 8, 28, "   `-----'");
+                    mvwprintw(scoreWin, 9, 28, "   _|___|_");
                     wrefresh(scoreWin);
 
-                    wattroff(scoreWin , COLOR_PAIR(6));
+                    wattroff(scoreWin, COLOR_PAIR(6));
                     wrefresh(scoreWin);
                     mvwprintw(scoreWin, 11, 1, "----------------------------------------------------------------------");
                     mvwprintw(scoreWin, 12, 2, "   |   Username   |   Score   |   Golds   |   Games   |  Experience ");
@@ -285,24 +288,24 @@ int preStartMenu(char type)
                         if (i == 0)
                         {
                             wattron(scoreWin, COLOR_PAIR(6));
-                            wattron(scoreWin , A_ITALIC);
+                            wattron(scoreWin, A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥇");
                         }
                         else if (i == 1)
                         {
                             wattron(scoreWin, COLOR_PAIR(7));
-                            wattron(scoreWin , A_ITALIC);
+                            wattron(scoreWin, A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥈");
                         }
                         else if (i == 2)
                         {
                             wattron(scoreWin, COLOR_PAIR(8));
-                            wattron(scoreWin , A_ITALIC);
+                            wattron(scoreWin, A_ITALIC);
                             mvwprintw(scoreWin, y, 2, "🥉");
                         }
                         else
                         {
-                            if (!strcmp(users[i]->username ,user->username))
+                            if (!strcmp(users[i]->username, user->username))
                             {
                                 wattron(scoreWin, COLOR_PAIR(9));
                             }
@@ -322,19 +325,19 @@ int preStartMenu(char type)
                         if (i == 0)
                         {
                             wattroff(scoreWin, COLOR_PAIR(6));
-                            wattron(scoreWin , A_ITALIC);
+                            wattron(scoreWin, A_ITALIC);
                         }
                         else if (i == 1)
                         {
                             wattroff(scoreWin, COLOR_PAIR(7));
-                            wattroff(scoreWin , A_ITALIC);
+                            wattroff(scoreWin, A_ITALIC);
                         }
                         else if (i == 2)
                         {
                             wattroff(scoreWin, COLOR_PAIR(8));
-                            wattroff(scoreWin , A_ITALIC);
+                            wattroff(scoreWin, A_ITALIC);
                         }
-                        if (!strcmp(users[i]->username ,user->username))
+                        if (!strcmp(users[i]->username, user->username))
                         {
                             wattroff(scoreWin, COLOR_PAIR(9));
                         }
