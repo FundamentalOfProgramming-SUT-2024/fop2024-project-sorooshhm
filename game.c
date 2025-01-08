@@ -1929,7 +1929,8 @@ void printDoors(Room *room)
         }
         else if (room->doors[i].type == 's')
         {
-            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "?");
+            if (room->doors[i].isVisible)
+                mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "?");
         }
     }
 }
