@@ -43,7 +43,7 @@ extern int maxY,
     maxX;
 
 int mapMode = 0;
-int damageTime = 30;
+volatile int damageTime = 30;
 int win_state = 0;
 WINDOW *mapWin;
 Game *game;
@@ -655,14 +655,20 @@ void lose()
 void *damagePlayer(void *args)
 {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    int counter = 0;
     while (1)
     {
-        sleep(damageTime);
-        (player)->health -= 5;
-        showPlayeInfo(*player);
-        if (player->health <= 0)
+        sleep(1);
+        counter++;
+        if (counter >= damageTime)
         {
-            break;
+            (player)->health -= 5;
+            showPlayeInfo(*player);
+            if (player->health <= 0)
+            {
+                break;
+            }
+            counter = 0;
         }
     }
     pthread_exit(NULL);
@@ -1890,7 +1896,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (player->room->type == 't' && inRoom(rooms, roomsCount, player->cord) == player->room->index)
     {
-        damageTime = 1;
+        damageTime = 5;
         showPlayeInfo(*player);
     }
     else
