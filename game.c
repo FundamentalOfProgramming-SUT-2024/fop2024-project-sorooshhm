@@ -25,6 +25,7 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_X, 
 bool hasOverlap(Room a, Room b);
 void printDoors(Room *room);
 void printRoom(Room *room);
+void printJustRooms(Room *room);
 int distance(Point a, Point b);
 bool isInRoom(Room *room, Point p);
 void createPassway(Passway **passway, Room **rooms, int roomCount);
@@ -531,6 +532,28 @@ void createLevel(Level *level, int levelIndex)
                         rooms[i]->enchants[j].type = 'd'; // damage
                     }
                 }
+                if (i == 0)
+                {
+                    rooms[i]->doors[0].type = 's';
+                    rooms[i]->doors[0].isVisible = false;
+                    rooms[i + 1]->doors[0].type = 's';
+                    rooms[i + 1]->doors[0].isVisible = false;
+                }
+                else if (i == roomsCounts - 1)
+                {
+                    rooms[i]->doors[0].type = 's';
+                    rooms[i]->doors[0].isVisible = false;
+                    if (roomsCounts == 6)
+                    {
+                        rooms[i - 1]->doors[1].type = 's';
+                        rooms[i - 1]->doors[1].isVisible = false;
+                    }
+                    else
+                    {
+                        rooms[i - 1]->doors[0].type = 's';
+                        rooms[i - 1]->doors[0].isVisible = false;
+                    }
+                }
                 rooms[i]->type = 't';
             }
             // another normal room
@@ -1015,37 +1038,6 @@ int distance(Point a, Point b)
     return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 }
 
-void printDoors(Room *room)
-{
-    WINDOW *screen = mapMode ? mapWin : stdscr;
-    for (int i = 0; i < room->doorCount; i++)
-    {
-        if (room->doors[i].type == 'n')
-        {
-            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
-        }
-        else if (room->doors->type == 'l')
-        {
-            attron(COLOR_PAIR(1));
-            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
-            attroff(COLOR_PAIR(1));
-            attron(COLOR_PAIR(2));
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-            attroff(COLOR_PAIR(2));
-        }
-        else if (room->doors->type == 'h')
-        {
-            attron(COLOR_PAIR(1));
-            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
-            attroff(COLOR_PAIR(1));
-            attron(COLOR_PAIR(2));
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
-            attroff(COLOR_PAIR(2));
-        }
-    }
-}
-
 Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, int max_y)
 {
     Room *room = (Room *)malloc(sizeof(Room));
@@ -1103,6 +1095,7 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
                 room->doors[i].type = 'n';
             }
         }
+        room->doors[i].isVisible = false;
     }
     if (num % 4 == 1)
     {
@@ -1197,7 +1190,7 @@ void handleMove()
             mapMode = 1;
             for (int i = 0; i < level->roomsCount; i++)
             {
-                printRoom(level->rooms[i]);
+                printJustRooms(level->rooms[i]);
             }
             wrefresh(mapWin);
             getchar();
@@ -1435,6 +1428,42 @@ int neighborRoom(Room **rooms, int index, int count, int y)
     }
     return -1;
 }
+int isDoor(Room *room, Point p)
+{
+    for (int i = 0; i < room->doorCount; i++)
+    {
+        if ((room->doors[i].cord.x == p.x && room->doors[i].cord.y == p.y) && room->doors[i].type == 's')
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+int findPoint(Passway *passway, Point p)
+{
+    for (int i = 0; i < passway->count; i++)
+    {
+        if (passway->points[i].x == p.x && passway->points[i].y == p.y)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+int findPassway(Passway **passways, int count, Point p)
+{
+    for (int i = 0; i < count; i++)
+    {
+        for (int j = 0; j < passways[i]->count; j++)
+        {
+            if (passways[i]->points[j].x == p.x && passways[i]->points[j].y == p.y)
+            {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
 
 int trapMode = 0;
 long long doorDelay = 0;
@@ -1453,6 +1482,14 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     if (c == 'O')
     {
         return;
+    }
+    int doorIndex = isDoor(player->room, cur);
+    if (doorIndex != -1)
+    {
+        player->room->doors[doorIndex].isVisible = true;
+        mvprintw(player->room->doors[doorIndex].cord.y, player->room->doors[doorIndex].cord.x, "?");
+        refresh();
+        c = '?';
     }
     int goldIndex = isGold(player->room, cur);
     if (goldIndex != -1)
@@ -1712,7 +1749,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             return;
         }
     }
-    if (c == '+')
+    if (c == '+' || c == '?')
     {
         player->state = 0;
         if (player->passway == NULL)
@@ -1720,7 +1757,6 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             player->passway = passways[0];
             player->passway->visiblePoint = 4;
             showPass(player->passway);
-            player->passway->visiblePoint += 2;
         }
         else
         {
@@ -1729,25 +1765,30 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 player->passway = passways[player->passway->index + 1];
                 player->passway->visiblePoint = 4;
                 showPass(player->passway);
-                player->passway->visiblePoint += 1;
             }
         }
         refresh();
     }
     if (c == '#')
     {
-        if (player->passway == NULL)
+        int passwayIndex = findPassway(passways, roomsCount - 1, player->cord);
+        if (passwayIndex != -1)
         {
-            player->passway = game->levels[game->currentLevel]->passways[player->room->index];
+            player->passway = passways[passwayIndex];
+            player->state = 0;
         }
-        showPass(player->passway);
-        player->passway->visiblePoint += 1;
+        int pIndex = findPoint(player->passway, cur);
+        if (pIndex != -1)
+        {
+            player->passway->visiblePoint = pIndex + 5;
+            showPass(player->passway);
+        }
         if (player->passway->visiblePoint == player->passway->count)
         {
             if (player->room->index != roomsCount - 1)
             {
-                rooms[player->room->index + 1]->isVisible = true;
-                printRoom(rooms[player->room->index + 1]);
+                rooms[player->passway->index + 1]->isVisible = true;
+                printRoom(rooms[player->passway->index + 1]);
             }
         }
     }
@@ -1793,12 +1834,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             refresh();
         }
     }
-    if ((c == '.' || c == '+' || c == '#') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
+    if ((c == '.' || c == '+' || c == '#' || c == '?') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
     {
         if (!trapMode)
         {
-            mvprintw(player->cord.y, player->cord.x, c == '.' ? "." : c == '+' ? "."
-                                                                               : "#");
+            mvprintw(player->cord.y, player->cord.x, c == '.' ? "." : (c == '+' || c == '?') ? "."
+                                                                                             : "#");
         }
         else
         {
@@ -1833,6 +1874,13 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         trapMode = 1;
         showPlayeInfo(*player);
     }
+
+    int passwayIndex = findPassway(passways, roomsCount - 1, player->cord);
+    if (passwayIndex != -1)
+    {
+        player->passway = passways[passwayIndex];
+        player->state = 0;
+    }
     int index = inRoom(rooms, roomsCount, player->cord);
     if (index != -1)
     {
@@ -1842,11 +1890,49 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
     if (player->room->type == 't' && inRoom(rooms, roomsCount, player->cord) == player->room->index)
     {
-        player->health--;
+        damageTime = 1;
         showPlayeInfo(*player);
+    }
+    else
+    {
+        damageTime = 30;
     }
 }
 
+void printDoors(Room *room)
+{
+    WINDOW *screen = mapMode ? mapWin : stdscr;
+    for (int i = 0; i < room->doorCount; i++)
+    {
+        if (room->doors[i].type == 'n')
+        {
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "+");
+        }
+        else if (room->doors[i].type == 'l' && room->doors[1 - i].type != 's')
+        {
+            attron(COLOR_PAIR(1));
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
+            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            attroff(COLOR_PAIR(2));
+        }
+        else if (room->doors[i].type == 'h' && room->doors[1 - i].type != 's')
+        {
+            attron(COLOR_PAIR(1));
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
+            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
+            attroff(COLOR_PAIR(2));
+        }
+        else if (room->doors[i].type == 's')
+        {
+            mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "?");
+        }
+    }
+}
 void printFoods(Room *room)
 {
     for (int i = 0; i < room->foodCount; i++)
@@ -1933,6 +2019,47 @@ void printPillars(Room *room)
     {
         mvprintw(room->pillar.cord.y, room->pillar.cord.x, "O");
     }
+}
+void printJustRooms(Room *room)
+{
+    int x, y, width, height;
+    x = room->cord.x;
+    y = room->cord.y;
+    height = room->height;
+    width = room->width;
+    WINDOW *screen = mapMode ? mapWin : stdscr;
+    if (room->type == 't')
+    {
+        attron(COLOR_PAIR(5));
+    }
+    else if (room->type == 'g')
+    {
+        attron(COLOR_PAIR(3));
+    }
+    for (int j = x + 1; j < x + width; j++)
+    {
+        mvwprintw(screen, y + 1, j, "-");
+        mvwprintw(screen, y + height - 1, j, "-");
+    }
+    for (int j = y + 2; j < y + height - 1; j++)
+    {
+        mvwprintw(screen, j, x, "|");
+        mvwprintw(screen, j, x + width, "|");
+
+        for (int k = x + 1; k < x + width; k++)
+        {
+            mvwprintw(screen, j, k, ".");
+        }
+    }
+    if (room->type == 't')
+    {
+        attroff(COLOR_PAIR(5));
+    }
+    else if (room->type == 'g')
+    {
+        attroff(COLOR_PAIR(3));
+    }
+    printDoors(room);
 }
 void printRoom(Room *room)
 {
