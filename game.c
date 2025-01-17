@@ -1805,7 +1805,6 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             findFood(cur, player->room);
             player->foodCount++;
             c = '.';
-            player->room->foodCount--;
             showPlayeInfo(*player);
         }
     }
