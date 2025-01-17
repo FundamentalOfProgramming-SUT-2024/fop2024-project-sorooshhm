@@ -40,10 +40,12 @@ int main()
     init_pair(7, SILVER_COLOR, COLOR_BLACK);
     init_pair(8, BRONZE_COLOR, COLOR_BLACK);
     init_pair(9, COLOR_CYAN, COLOR_BLACK);
+
     // noecho();
     user = (User *)malloc(sizeof(User));
     cbreak();
     getmaxyx(stdscr, maxY, maxX);
+    
     // check authorization for auth menu
     char checkAuth = isAuthorized(&user);
     if (checkAuth == '0')
