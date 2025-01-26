@@ -20,6 +20,7 @@
 #define MIN_WIDTH 10
 
 void handleMove();
+void moveEnemies(Player *player);
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y);
 Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_X, int max_y);
 bool hasOverlap(Room a, Room b);
@@ -50,7 +51,7 @@ Game *game;
 Player *player;
 User *u;
 Enemy *curEnemy = NULL;
-int enemyMode = 0;
+int marked_enemies[100] = {0};
 long long milliseconds;
 
 void startGame(User *user, Mix_Music *music)
@@ -92,6 +93,8 @@ void startGame(User *user, Mix_Music *music)
     player->brokenAcientKey = 0;
     player->gold = 0;
     player->name = user->username;
+    player->enemyCount = 0;
+    player->enemies = (Enemy **)malloc(sizeof(Enemy*) * 10);
     game->player = player;
 
     showLevel(game->levels[game->currentLevel]);
@@ -191,6 +194,9 @@ void resumeGame(User *user, Mix_Music *music)
             game->player->passway = game->levels[game->currentLevel]->passways[passwayIndex];
         }
     }
+    player->enemyCount = 0;
+    player->enemies = (Enemy **)malloc(sizeof(Enemy*) * 10);
+
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
     // refresh();
@@ -378,7 +384,7 @@ void createLevel(Level *level, int levelIndex)
 
     createPassway(passways, rooms, roomsCounts);
     refresh();
-
+    int id = 1;
     // adding foods , traps , stairs
     for (int i = 0; i < roomsCounts; i++)
     {
@@ -650,6 +656,9 @@ void createLevel(Level *level, int levelIndex)
             }
             rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
             rooms[i]->enemy->cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
+            rooms[i]->enemy->isVisible = false;
+            rooms[i]->enemy->id = id++;
+            rooms[i]->enemy->moves = 0;
         }
 
         if (i == 0 && levelIndex != 0)
@@ -1187,6 +1196,58 @@ bool isInRoom(Room *room, Point p)
     return p.x > room->cord.x && p.x < (room->cord.x + room->width) && p.y > room->cord.y && p.y < (room->cord.y + room->height);
 }
 
+int isWay(Point p)
+{
+    char c = mvinch(p.y, p.x);
+    if (c != '|' && c != '-' && c != '_' && c != '@' && c !=' ')
+    {
+        return 1;
+    }
+    return 0;
+}
+
+void showEnemy(Enemy *enemy)
+{
+    attron(COLOR_PAIR(4));
+    mvprintw(enemy->cord.y, enemy->cord.x, "%c", enemy->type);
+    attroff(COLOR_PAIR(4));
+    refresh();
+}
+
+void moveEnemies(Player *player)
+{
+    for (int i = 0; i < player->enemyCount; i++)
+    {
+        Enemy *enemy = player->enemies[i];
+        Point p;
+        Point prev_p = enemy->cord;
+        int move_x = enemy->cord.x > player->cord.x ? -1 : 1;
+        p.x = enemy->cord.x + move_x;
+        p.y = enemy->cord.y;
+        if (isWay(p))
+        {
+            enemy->cord = p;
+        }
+        int move_y = enemy->cord.y > player->cord.y ? -1 : 1;
+        p.y = enemy->cord.y + move_y;
+        p.x = enemy->cord.x;
+        if (isWay(p))
+        {
+            enemy->cord = p;
+        }
+        enemy->moves++;
+        if (inPassway(game->levels[game->currentLevel]->passways, game->levels[game->currentLevel]->roomsCount - 1, prev_p) == -1)
+        {
+            mvprintw(prev_p.y, prev_p.x, ".");
+        }
+        else
+        {
+            mvprintw(prev_p.y, prev_p.x, "#");
+        }
+        showEnemy(enemy);
+    }
+}
+
 void handleMove()
 {
     while (1)
@@ -1203,6 +1264,7 @@ void handleMove()
             break;
         }
         char c = getchar();
+        moveEnemies(game->player);
         if (c == 27)
         {
             break;
@@ -1533,51 +1595,25 @@ int nextToEnemy(Room *room, Point p)
         return 0;
     }
     Enemy *enemy = room->enemy;
-    if (enemy->cord.x + 1 == p.x && enemy->cord.y == p.y)
+    if (enemy->cord.x == p.x || enemy->cord.y == p.y)
     {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x - 1 == p.x && enemy->cord.y == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x == p.x && enemy->cord.y + 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x == p.x && enemy->cord.y - 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x - 1 == p.x && enemy->cord.y - 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x + 1 == p.x && enemy->cord.y - 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x + 1 == p.x && enemy->cord.y + 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
-    }
-    else if (enemy->cord.x - 1 == p.x && enemy->cord.y + 1 == p.y)
-    {
-        enemyMode += 1;
-        return 1;
+        if (!marked_enemies[enemy->id])
+        {
+            curEnemy = enemy;
+            marked_enemies[enemy->id] = 1;
+            return 1;
+        }
+        return 0;
     }
     return 0;
 }
 
 int trapMode = 0;
 long long doorDelay = 0;
+int isEnemy(char c)
+{
+    return (c == 'D' || c == 'G' || c == 'F' || c == 'S' || c == 'U');
+}
 void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount, int x, int y)
 {
     if (game->currentLevel == 3 && player->room->index == game->levels[game->currentLevel]->roomsCount - 1)
@@ -1590,10 +1626,14 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     Point cur;
     cur.x = x;
     cur.y = y;
-    if (!enemyMode && nextToEnemy(player->room, cur))
+    if (nextToEnemy(player->room, cur))
     {
+        curEnemy->isVisible = true;
+        player->enemies[player->enemyCount++] = curEnemy;
+        curEnemy = NULL;
         mvprintw(1, 1, "An enemy is following you !");
         refresh();
+        printRoom(player->room);
     }
     if (c == 'O')
     {
@@ -1620,7 +1660,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         c = '.';
         showPlayeInfo(*player);
         getchar();
-        mvprintw(1, 1, "                          ");
+        mvprintw(1, 1, "                                ");
         refresh();
     }
     if (trapMode == 1)
@@ -1918,7 +1958,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             showPlayeInfo(*player);
         }
     }
-    if (c == 'H' || c == 'S' || c == 'I')
+    if (c == 'H' || c == 'R' || c == 'I')
     {
         mvprintw(1, 1, "click <p> to pick enchant");
         refresh();
@@ -2122,7 +2162,7 @@ void printEnchants(Room *room)
             if (room->enchants[i].type == 'h')
                 mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "H");
             else if (room->enchants[i].type == 's')
-                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "S");
+                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "R");
             else
                 mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "I");
         }
@@ -2138,7 +2178,7 @@ void printPillars(Room *room)
 }
 void printEnemies(Room *room)
 {
-    if (room->enemy != NULL && room->enemyCount && room->enemy->health > 0)
+    if (room->enemy != NULL && room->enemyCount && room->enemy->isVisible)
     {
         attron(COLOR_PAIR(4));
         mvprintw(room->enemy->cord.y, room->enemy->cord.x, "%c", room->enemy->type);
@@ -2235,7 +2275,7 @@ void printRoom(Room *room)
     printGuns(room);
     printEnchants(room);
     printPillars(room);
-    // printEnemies(room);
+    printEnemies(room);
     if (room->keyCount)
     {
         attron(COLOR_PAIR(3));

@@ -43,6 +43,9 @@ typedef struct
     Point cord;
     int damage;
     int health;
+    int id;
+    int moves;
+    bool isVisible;
 } Enemy;
 
 typedef struct
@@ -132,6 +135,8 @@ typedef struct
     int acientKey;
     int gold;
     int brokenAcientKey;
+    int enemyCount;
+    Enemy** enemies;
 } Player;
 
 typedef struct

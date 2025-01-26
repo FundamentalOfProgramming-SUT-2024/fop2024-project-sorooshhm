@@ -338,17 +338,20 @@ int loadGame(Game *game, User *user)
     fread(&player->brokenAcientKey, sizeof(int), 1, file);
     fread(&player->foodCount, sizeof(int), 1, file);
     fread(&player->gunCount, sizeof(int), 1, file);
-    player->guns = (Gun *)malloc(sizeof(Gun) * player->gunCount);
+    player->guns = (Gun *)malloc(sizeof(Gun) * 100);
     fread(player->guns, sizeof(Gun), player->gunCount, file);
 
     fread(&player->enchantCount, sizeof(int), 1, file);
-    player->enchants = (Enchant *)malloc(sizeof(Enchant) * player->enchantCount);
+    player->enchants = (Enchant *)malloc(sizeof(Enchant) * 100);
     fread(player->enchants, sizeof(Enchant), player->enchantCount, file);
 
     fread(&player->level, sizeof(int), 1, file);
     fread(&player->acientKey, sizeof(int), 1, file);
     fread(&player->brokenAcientKey, sizeof(int), 1, file);
+    fread(&player->enemyCount, sizeof(int), 1, file);
 
+    player->enemies = (Enemy *)malloc(sizeof(Enemy) * 10);
+    fread(player->enemies, sizeof(Enemy), player->enemyCount, file);
     player->name = user->username;
     game->player = player;
     fclose(file);
