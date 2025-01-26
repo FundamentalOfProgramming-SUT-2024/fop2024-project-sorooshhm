@@ -15,6 +15,7 @@
 #define GOLD_COLOR 100
 #define SILVER_COLOR 101
 #define BRONZE_COLOR 102
+#define COLOR_RED2 103
 
 User *user;
 int maxY, maxX;
@@ -30,6 +31,7 @@ int main()
     init_color(GOLD_COLOR, 1000, 843, 0);
     init_color(SILVER_COLOR, 750, 750, 750);
     init_color(BRONZE_COLOR, 804, 498, 196);
+    init_color(COLOR_RED2, 545, 39, 39);
 
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
     init_pair(2, COLOR_BLUE, COLOR_BLACK);
@@ -40,12 +42,13 @@ int main()
     init_pair(7, SILVER_COLOR, COLOR_BLACK);
     init_pair(8, BRONZE_COLOR, COLOR_BLACK);
     init_pair(9, COLOR_CYAN, COLOR_BLACK);
+    init_pair(10, COLOR_RED2, COLOR_BLACK);
 
     // noecho();
     user = (User *)malloc(sizeof(User));
     cbreak();
     getmaxyx(stdscr, maxY, maxX);
-    
+
     // check authorization for auth menu
     char checkAuth = isAuthorized(&user);
     if (checkAuth == '0')
@@ -216,6 +219,16 @@ int preStartMenu(char type)
 
         if (type == '1')
         {
+            attron(COLOR_PAIR(10));
+            mvprintw(26, maxX / 2 - 32, "░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓████████▓▒░");
+            mvprintw(27, maxX / 2 - 32, "░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░");
+            mvprintw(28, maxX / 2 - 32, "░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░");
+            mvprintw(29, maxX / 2 - 32, "░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒▒▓███▓▒░▒▓██████▓▒░");
+            mvprintw(30, maxX / 2 - 32, "░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░");
+            mvprintw(31, maxX / 2 - 32, "░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░");
+            mvprintw(32, maxX / 2 - 32, "░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒");
+            attroff(COLOR_PAIR(10));
+            refresh();
             WINDOW *menuWin = creaetMenuWindow(20, maxX / 2, maxY / 2 - 15, maxX / 4);
             char **menu = createPreStartMenu(type);
             wattron(menuWin, A_BLINK);
@@ -228,7 +241,7 @@ int preStartMenu(char type)
             noecho();
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, 7, 0);
-            printw("You choose %s", menu[highlight]);
+            mvprintw(1, 1, "You choose %s", menu[highlight]);
             refresh();
             getchar();
             wclear(menuWin);

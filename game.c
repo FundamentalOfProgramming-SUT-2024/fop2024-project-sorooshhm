@@ -49,6 +49,8 @@ WINDOW *mapWin;
 Game *game;
 Player *player;
 User *u;
+Enemy *curEnemy = NULL;
+int enemyMode = 0;
 long long milliseconds;
 
 void startGame(User *user, Mix_Music *music)
@@ -442,7 +444,7 @@ void createLevel(Level *level, int levelIndex)
                         rooms[i]->golds[j].count = 5;
                     }
                 }
-                count = randomNumber(0, 2);
+                count = randomNumber(0, 1);
                 rooms[i]->gunCount = count;
                 rooms[i]->guns = (Gun *)malloc(count * sizeof(Gun));
                 for (int j = 0; j < count; j++)
@@ -472,7 +474,7 @@ void createLevel(Level *level, int levelIndex)
                         rooms[i]->guns[j].type = 's'; // shamshir
                     }
                 }
-                count = randomNumber(0, 2);
+                count = randomNumber(0, 1);
                 rooms[i]->enchantCount = count;
                 rooms[i]->enchants = (Enchant *)malloc(count * sizeof(Enchant));
                 for (int j = 0; j < count; j++)
@@ -600,6 +602,54 @@ void createLevel(Level *level, int levelIndex)
                 }
                 rooms[i]->type = 'n';
             }
+        }
+        int num = rand();
+        if (num)
+        {
+            rooms[i]->enemyCount = 1;
+
+            if (num % 5 == 0)
+            {
+                Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+                enemy->type = 'D';
+                enemy->health = 5;
+                enemy->damage = 1;
+                rooms[i]->enemy = enemy;
+            }
+            else if (num % 5 == 1)
+            {
+                Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+                enemy->type = 'F';
+                enemy->health = 10;
+                enemy->damage = 1;
+                rooms[i]->enemy = enemy;
+            }
+            else if (num % 5 == 2)
+            {
+                Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+                enemy->type = 'G';
+                enemy->health = 15;
+                enemy->damage = 1;
+                rooms[i]->enemy = enemy;
+            }
+            else if (num % 5 == 3)
+            {
+                Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+                enemy->type = 'S';
+                enemy->health = 20;
+                enemy->damage = 1;
+                rooms[i]->enemy = enemy;
+            }
+            else if (num % 5 == 4)
+            {
+                Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+                enemy->type = 'U';
+                enemy->health = 30;
+                enemy->damage = 1;
+                rooms[i]->enemy = enemy;
+            }
+            rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
+            rooms[i]->enemy->cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
         }
 
         if (i == 0 && levelIndex != 0)
@@ -1127,6 +1177,8 @@ Room *createRoom(Room **rooms, int roomsCount, int min_x, int min_y, int max_x, 
     room->gunCount = 0;
     room->enchants = NULL;
     room->guns = NULL;
+    room->enemy = NULL;
+    room->enemyCount = 0;
     return room;
 }
 
@@ -1470,6 +1522,59 @@ int findPassway(Passway **passways, int count, Point p)
     }
     return -1;
 }
+int nextToEnemy(Room *room, Point p)
+{
+    if (room->enemyCount == 0 || room->enemy == NULL)
+    {
+        return 0;
+    }
+    if (room->enemy->health <= 0)
+    {
+        return 0;
+    }
+    Enemy *enemy = room->enemy;
+    if (enemy->cord.x + 1 == p.x && enemy->cord.y == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x - 1 == p.x && enemy->cord.y == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x == p.x && enemy->cord.y + 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x == p.x && enemy->cord.y - 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x - 1 == p.x && enemy->cord.y - 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x + 1 == p.x && enemy->cord.y - 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x + 1 == p.x && enemy->cord.y + 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    else if (enemy->cord.x - 1 == p.x && enemy->cord.y + 1 == p.y)
+    {
+        enemyMode += 1;
+        return 1;
+    }
+    return 0;
+}
 
 int trapMode = 0;
 long long doorDelay = 0;
@@ -1485,6 +1590,11 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     Point cur;
     cur.x = x;
     cur.y = y;
+    if (!enemyMode && nextToEnemy(player->room, cur))
+    {
+        mvprintw(1, 1, "An enemy is following you !");
+        refresh();
+    }
     if (c == 'O')
     {
         return;
@@ -1808,7 +1918,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             showPlayeInfo(*player);
         }
     }
-    if (c == 'H' || c == 'S' || c == 'D')
+    if (c == 'H' || c == 'S' || c == 'I')
     {
         mvprintw(1, 1, "click <p> to pick enchant");
         refresh();
@@ -2014,7 +2124,7 @@ void printEnchants(Room *room)
             else if (room->enchants[i].type == 's')
                 mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "S");
             else
-                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "D");
+                mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "I");
         }
     }
     refresh();
@@ -2024,6 +2134,16 @@ void printPillars(Room *room)
     if (room->pillar.cord.x != room->pillar.cord.y != 0)
     {
         mvprintw(room->pillar.cord.y, room->pillar.cord.x, "O");
+    }
+}
+void printEnemies(Room *room)
+{
+    if (room->enemy != NULL && room->enemyCount && room->enemy->health > 0)
+    {
+        attron(COLOR_PAIR(4));
+        mvprintw(room->enemy->cord.y, room->enemy->cord.x, "%c", room->enemy->type);
+        attroff(COLOR_PAIR(4));
+        refresh();
     }
 }
 void printJustRooms(Room *room)
@@ -2115,6 +2235,7 @@ void printRoom(Room *room)
     printGuns(room);
     printEnchants(room);
     printPillars(room);
+    // printEnemies(room);
     if (room->keyCount)
     {
         attron(COLOR_PAIR(3));

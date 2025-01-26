@@ -203,6 +203,8 @@ void saveGame(Game *game, User *user)
             fwrite(&room->enchantCount, sizeof(int), 1, file);
             fwrite(room->enchants, sizeof(Enchant), room->enchantCount, file);
             fwrite(&room->stair, sizeof(Stair), 1, file);
+            fwrite(&room->enemyCount, sizeof(int), 1, file);
+            fwrite(room->enemy, sizeof(Enemy), room->enemyCount, file);
         }
 
         for (int j = 0; j < level->roomsCount - 1; j++)
@@ -297,6 +299,14 @@ int loadGame(Game *game, User *user)
             fread(room->enchants, sizeof(Enchant), room->enchantCount, file);
             fread(&room->stair, sizeof(Stair), 1, file);
 
+            fread(&room->enemyCount, sizeof(int), 1, file);
+
+            room->enemy = (Enemy *)malloc(sizeof(Enemy));
+            fread(room->enemy, sizeof(Enemy), room->enemyCount, file);
+            if (room->enemyCount == 0)
+            {
+                room->enemy = NULL;
+            }
             level->rooms[j] = room;
         }
 
