@@ -94,7 +94,7 @@ void startGame(User *user, Mix_Music *music)
     player->gold = 0;
     player->name = user->username;
     player->enemyCount = 0;
-    player->enemies = (Enemy **)malloc(sizeof(Enemy*) * 10);
+    player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
     game->player = player;
 
     showLevel(game->levels[game->currentLevel]);
@@ -195,7 +195,7 @@ void resumeGame(User *user, Mix_Music *music)
         }
     }
     player->enemyCount = 0;
-    player->enemies = (Enemy **)malloc(sizeof(Enemy*) * 10);
+    player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
 
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
@@ -309,6 +309,9 @@ int changeLevel(Stair stair)
         refresh();
         showLevel(game->levels[game->currentLevel]);
     }
+    player->enemyCount = 0;
+    marked_enemies[player->enemies[0]->id] = 0;
+    player->enemies[0] = NULL;
     return 1;
 }
 
@@ -1199,7 +1202,7 @@ bool isInRoom(Room *room, Point p)
 int isWay(Point p)
 {
     char c = mvinch(p.y, p.x);
-    if (c != '|' && c != '-' && c != '_' && c != '@' && c !=' ')
+    if (c != '|' && c != '-' && c != '_' && c != '@' && c != ' ' && c != '&' && c != '=')
     {
         return 1;
     }
@@ -1236,12 +1239,24 @@ void moveEnemies(Player *player)
             enemy->cord = p;
         }
         enemy->moves++;
-        if (inPassway(game->levels[game->currentLevel]->passways, game->levels[game->currentLevel]->roomsCount - 1, prev_p) == -1)
+        if ((enemy->type == 'G' || enemy->type == 'U') && enemy->moves >= 5)
+        {
+            player->enemyCount = 0;
+            player->enemies[0] = NULL;
+            marked_enemies[enemy->id] = 0;
+            return;
+        }
+        if (mvinch(prev_p.y, prev_p.x - 1) == '-' || mvinch(prev_p.y, prev_p.x + 1) == '-')
+        {
+            mvprintw(prev_p.y, prev_p.x, "+");
+        }
+        else if (inPassway(game->levels[game->currentLevel]->passways, game->levels[game->currentLevel]->roomsCount - 1, prev_p) == -1)
         {
             mvprintw(prev_p.y, prev_p.x, ".");
         }
         else
         {
+
             mvprintw(prev_p.y, prev_p.x, "#");
         }
         showEnemy(enemy);
@@ -1594,6 +1609,8 @@ int nextToEnemy(Room *room, Point p)
     {
         return 0;
     }
+    if (player->enemyCount > 0)
+        return 0;
     Enemy *enemy = room->enemy;
     if (enemy->cord.x == p.x || enemy->cord.y == p.y)
     {
