@@ -1297,6 +1297,7 @@ void handleMove()
         {
             break;
         }
+
         else if (c == 'w' || c == '8')
         {
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 1);
@@ -1483,6 +1484,11 @@ void handleMove()
         else if (c == 'f')
         {
             win_state = 1;
+        }
+        if (player->enemyCount)
+        {
+            player->health -= player->enemies[0]->damage;
+            showPlayeInfo(*player);
         }
     }
 }
