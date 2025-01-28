@@ -49,6 +49,7 @@ int win_state = 0;
 WINDOW *mapWin;
 Game *game;
 Player *player;
+Gun *curGun;
 User *u;
 Enemy *curEnemy = NULL;
 int marked_enemies[100] = {0};
@@ -92,7 +93,7 @@ void startGame(User *user, Mix_Music *music)
     player->state = 1;
     player->room = game->levels[game->currentLevel]->rooms[0];
     player->passway = NULL;
-    player->health = 40;
+    player->health = 100;
     player->foodCount = 0;
     player->gunCount = 1;
     player->enchantCount = 0;
@@ -100,6 +101,7 @@ void startGame(User *user, Mix_Music *music)
     player->guns[0] = (Gun *)malloc(sizeof(Gun));
     player->guns[0]->count = 1;
     player->guns[0]->type = 'g';
+    player->guns[0]->damage = 5; // khanjar
     player->guns[0]->isUsed = true;
     player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
     player->level = 0;
@@ -110,7 +112,7 @@ void startGame(User *user, Mix_Music *music)
     player->enemyCount = 0;
     player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
     game->player = player;
-
+    curGun = player->guns[0];
     showLevel(game->levels[game->currentLevel]);
 
     keypad(stdscr, true);
@@ -228,6 +230,8 @@ void resumeGame(User *user, Mix_Music *music)
     player = game->player;
     player->enemyCount = 0;
     player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
+    curGun = player->guns[0];
+
     showLevel(game->levels[game->currentLevel]);
 
     keypad(stdscr, true);
@@ -481,19 +485,27 @@ void createLevel(Level *level, int levelIndex)
                     rooms[i]->guns[j].isUsed = false;
                     if ((num % 4 == 3))
                     {
-                        rooms[i]->guns[j].type = 'k'; // khanjar
+                        rooms[i]->guns[j].type = 'k';  // khanjar
+                        rooms[i]->guns[j].damage = 12; // khanjar
+                        rooms[i]->guns[j].count = 10;
                     }
                     else if (num % 4 == 2)
                     {
-                        rooms[i]->guns[j].type = 'a'; // asa
+                        rooms[i]->guns[j].type = 'a';  // asa
+                        rooms[i]->guns[j].damage = 15; // khanjar
+                        rooms[i]->guns[j].count = 8;
                     }
                     else if (num % 4 == 1)
                     {
                         rooms[i]->guns[j].type = 't'; // tir
+                        rooms[i]->guns[j].damage = 5; // khanjar
+                        rooms[i]->guns[j].count = 20;
                     }
                     else
                     {
-                        rooms[i]->guns[j].type = 's'; // shamshir
+                        rooms[i]->guns[j].type = 's';  // shamshir
+                        rooms[i]->guns[j].damage = 10; // khanjar
+                        rooms[i]->guns[j].count = 1;
                     }
                 }
                 count = randomNumber(0, 1);
@@ -626,7 +638,7 @@ void createLevel(Level *level, int levelIndex)
             }
         }
         int num = rand();
-        if (num)
+        if (num % 6)
         {
             rooms[i]->enemyCount = 1;
 
@@ -1276,8 +1288,30 @@ void moveEnemies(Player *player)
     }
 }
 
+int isNear(Point p, Point c)
+{
+    if (p.x - 1 == c.x && p.y == c.y)
+        return 1;
+    if (p.x + 1 == c.x && p.y == c.y)
+        return 1;
+    if (p.x == c.x && p.y + 1 == c.y)
+        return 1;
+    if (p.x == c.x && p.y - 1 == c.y)
+        return 1;
+    if (p.x - 1 == c.x && p.y + 1 == c.y)
+        return 1;
+    if (p.x - 1 == c.x && p.y - 1 == c.y)
+        return 1;
+    if (p.x + 1 == c.x && p.y - 1 == c.y)
+        return 1;
+    if (p.x + 1 == c.x && p.y + 1 == c.y)
+        return 1;
+    return 0;
+}
+
 void handleMove()
 {
+    int check = 1;
     while (1)
     {
         Level *level = game->levels[game->currentLevel];
@@ -1292,12 +1326,64 @@ void handleMove()
             break;
         }
         char c = getchar();
-        moveEnemies(game->player);
         if (c == 27)
         {
             break;
         }
-
+        else if (c == ' ')
+        {
+            if (player->enemyCount)
+            {
+                Enemy *enemy = player->enemies[0];
+                if (curGun->type == 'g')
+                {
+                    if (isNear(player->cord, enemy->cord))
+                    {
+                        enemy->health -= curGun->damage;
+                        mvprintw(1, 1, "Cool ! you hit the enemy ");
+                        refresh();
+                        // message for hitting enemy
+                        if (enemy->health <= 0)
+                        {
+                            mvprintw(1, 1, "You killed him !!!          ");
+                            refresh();
+                            player->enemyCount = 0;
+                            player->enemies[0] = NULL;
+                            char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                            if (c == ' ')
+                            {
+                                mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                            }
+                            else
+                            {
+                                mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                            }
+                            refresh();
+                        }
+                    }
+                    else
+                    {
+                        // message for missing to hit
+                    }
+                }
+                else if (curGun->type == 'k')
+                {
+                }
+                else if (curGun->type == 'a')
+                {
+                }
+                else if (curGun->type == 't')
+                {
+                }
+                else if (curGun->type == 's')
+                {
+                    if (isNear(player->cord, enemy->cord))
+                    {
+                        enemy->health -= curGun->damage;
+                    }
+                }
+            }
+        }
         else if (c == 'w' || c == '8')
         {
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 1);
@@ -1485,11 +1571,16 @@ void handleMove()
         {
             win_state = 1;
         }
-        if (player->enemyCount)
+        if ((c == 'w' || c == 'a' || c == 'd' || c == 's'))
         {
-            player->health -= player->enemies[0]->damage;
-            showPlayeInfo(*player);
+            moveEnemies(game->player);
+            if (player->enemyCount && check % 2)
+            {
+                player->health -= player->enemies[0]->damage;
+                showPlayeInfo(*player);
+            }
         }
+        check++;
     }
 }
 

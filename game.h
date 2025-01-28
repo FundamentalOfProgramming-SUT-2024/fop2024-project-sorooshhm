@@ -59,6 +59,7 @@ typedef struct
     bool isUsed;
     Point cord;
     int count;
+    int damage;
 } Gun;
 
 typedef struct
