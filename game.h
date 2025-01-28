@@ -58,6 +58,7 @@ typedef struct
     char type; // g -> gorz; k -> khanjar; a -> asa; t -> tir; s-> shamshir
     bool isUsed;
     Point cord;
+    int count;
 } Gun;
 
 typedef struct
@@ -125,7 +126,7 @@ typedef struct
     int state; // 0 -> in passway ; 1 -> in room
     Room *room;
     Passway *passway;
-    Gun *guns;
+    Gun **guns;
     Enchant *enchants;
     int foodCount;
     int gunCount;
@@ -136,7 +137,7 @@ typedef struct
     int gold;
     int brokenAcientKey;
     int enemyCount;
-    Enemy** enemies;
+    Enemy **enemies;
 } Player;
 
 typedef struct

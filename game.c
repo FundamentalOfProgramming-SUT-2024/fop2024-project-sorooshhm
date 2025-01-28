@@ -54,8 +54,18 @@ Enemy *curEnemy = NULL;
 int marked_enemies[100] = {0};
 long long milliseconds;
 
+void freeArr()
+{
+    for (int i = 0; i < 100; i++)
+    {
+        marked_enemies[i] = 0;
+    }
+}
+
 void startGame(User *user, Mix_Music *music)
 {
+
+    freeArr();
     struct timeval tv;
     gettimeofday(&tv, NULL);
     milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
@@ -84,9 +94,13 @@ void startGame(User *user, Mix_Music *music)
     player->passway = NULL;
     player->health = 40;
     player->foodCount = 0;
-    player->gunCount = 0;
+    player->gunCount = 1;
     player->enchantCount = 0;
-    player->guns = (Gun *)malloc(100 * sizeof(Gun));
+    player->guns = (Gun **)malloc(100 * sizeof(Gun *));
+    player->guns[0] = (Gun *)malloc(sizeof(Gun));
+    player->guns[0]->count = 1;
+    player->guns[0]->type = 'g';
+    player->guns[0]->isUsed = true;
     player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
     player->level = 0;
     player->acientKey = 0;
@@ -113,6 +127,8 @@ void startGame(User *user, Mix_Music *music)
     // saving the game
     if (u->isAuth)
     {
+        player->enemyCount = 0;
+        player->enemies[0] = NULL;
         saveGame(game, user);
     }
 
@@ -145,6 +161,8 @@ int inPassway(Passway **passways, int count, Point p)
 
 void resumeGame(User *user, Mix_Music *music)
 {
+    freeArr();
+
     struct timeval tv;
     gettimeofday(&tv, NULL);
     milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
@@ -194,15 +212,13 @@ void resumeGame(User *user, Mix_Music *music)
             game->player->passway = game->levels[game->currentLevel]->passways[passwayIndex];
         }
     }
-    player->enemyCount = 0;
-    player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
 
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
     // refresh();
     if (!game->player->gunCount)
     {
-        game->player->guns = (Gun *)malloc(100 * sizeof(Gun));
+        game->player->guns = (Gun **)malloc(100 * sizeof(Gun));
     }
     if (!game->player->enchantCount)
     {
@@ -210,7 +226,8 @@ void resumeGame(User *user, Mix_Music *music)
     }
 
     player = game->player;
-
+    player->enemyCount = 0;
+    player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
     showLevel(game->levels[game->currentLevel]);
 
     keypad(stdscr, true);
@@ -462,19 +479,15 @@ void createLevel(Level *level, int levelIndex)
                     rooms[i]->guns[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
                     rooms[i]->guns[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
                     rooms[i]->guns[j].isUsed = false;
-                    if (num % 5 == 4)
-                    {
-                        rooms[i]->guns[j].type = 'g'; // gorz
-                    }
-                    else if ((num % 5 == 3))
+                    if ((num % 4 == 3))
                     {
                         rooms[i]->guns[j].type = 'k'; // khanjar
                     }
-                    else if (num % 5 == 2)
+                    else if (num % 4 == 2)
                     {
                         rooms[i]->guns[j].type = 'a'; // asa
                     }
-                    else if (num % 5 == 1)
+                    else if (num % 4 == 1)
                     {
                         rooms[i]->guns[j].type = 't'; // tir
                     }
@@ -1429,19 +1442,19 @@ void handleMove()
                 // if (!player.usedFood[i])
                 // {
                 menu[i] = malloc(20 * sizeof(char));
-                if (player->guns[i].type == 'g')
+                if (player->guns[i]->type == 'g')
                 {
                     menu[i] = "Gorz ⚒";
                 }
-                else if (player->guns[i].type == 'k')
+                else if (player->guns[i]->type == 'k')
                 {
                     menu[i] = "Khanjar 🗡️";
                 }
-                else if (player->guns[i].type == 'a')
+                else if (player->guns[i]->type == 'a')
                 {
                     menu[i] = "Asa jadooyi 🪄";
                 }
-                else if (player->guns[i].type == 't')
+                else if (player->guns[i]->type == 't')
                 {
                     menu[i] = "➳";
                 }
@@ -1601,14 +1614,18 @@ int findPassway(Passway **passways, int count, Point p)
 }
 int nextToEnemy(Room *room, Point p)
 {
-    if (room->enemyCount == 0 || room->enemy == NULL)
+    if (room->enemyCount == 0)
     {
         return 0;
     }
-    if (room->enemy->health <= 0)
+    if (room->enemy == NULL)
     {
         return 0;
     }
+    // if (room->enemy->health <= 0)
+    // {
+    //     return 0;
+    // }
     if (player->enemyCount > 0)
         return 0;
     Enemy *enemy = room->enemy;
@@ -1999,7 +2016,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         if (ch == 'p')
         {
-            player->guns[player->gunCount++] = player->room->guns[gunIndex];
+            player->guns[player->gunCount++] = &player->room->guns[gunIndex];
             player->room->guns[gunIndex].isUsed = true;
             c = '.';
             mvprintw(y, x, "..");
@@ -2195,7 +2212,7 @@ void printPillars(Room *room)
 }
 void printEnemies(Room *room)
 {
-    if (room->enemy != NULL && room->enemyCount && room->enemy->isVisible)
+    if (room->enemy != NULL && room->enemyCount)
     {
         attron(COLOR_PAIR(4));
         mvprintw(room->enemy->cord.y, room->enemy->cord.x, "%c", room->enemy->type);
