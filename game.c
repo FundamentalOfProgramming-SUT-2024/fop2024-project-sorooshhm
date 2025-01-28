@@ -1269,6 +1269,7 @@ void moveEnemies(Player *player)
             player->enemyCount = 0;
             player->enemies[0] = NULL;
             marked_enemies[enemy->id] = 0;
+            enemy->moves = 0;
             return;
         }
         if (mvinch(prev_p.y, prev_p.x - 1) == '-' || mvinch(prev_p.y, prev_p.x + 1) == '-')
@@ -1305,6 +1306,8 @@ int isNear(Point p, Point c)
     if (p.x + 1 == c.x && p.y - 1 == c.y)
         return 1;
     if (p.x + 1 == c.x && p.y + 1 == c.y)
+        return 1;
+    if (p.x == c.x && p.y == c.y)
         return 1;
     return 0;
 }
@@ -1349,6 +1352,7 @@ void handleMove()
                             refresh();
                             player->enemyCount = 0;
                             player->enemies[0] = NULL;
+                            enemy->isVisible = false;
                             char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
                             if (c == ' ')
                             {
@@ -1363,7 +1367,8 @@ void handleMove()
                     }
                     else
                     {
-                        // message for missing to hit
+                        mvprintw(1, 1, "Oh :( You missed to hit  ");
+                        refresh();
                     }
                 }
                 else if (curGun->type == 'k')
@@ -1380,6 +1385,32 @@ void handleMove()
                     if (isNear(player->cord, enemy->cord))
                     {
                         enemy->health -= curGun->damage;
+                        mvprintw(1, 1, "Cool ! you hit the enemy ");
+                        refresh();
+                        // message for hitting enemy
+                        if (enemy->health <= 0)
+                        {
+                            mvprintw(1, 1, "You killed him !!!          ");
+                            refresh();
+                            player->enemyCount = 0;
+                            player->enemies[0] = NULL;
+                            enemy->isVisible = false;
+                            char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                            if (c == ' ')
+                            {
+                                mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                            }
+                            else
+                            {
+                                mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                            }
+                            refresh();
+                        }
+                    }
+                    else
+                    {
+                        mvprintw(1, 1, "Oh :( You missed to hit  ");
+                        refresh();
                     }
                 }
             }
@@ -1574,13 +1605,12 @@ void handleMove()
         if ((c == 'w' || c == 'a' || c == 'd' || c == 's'))
         {
             moveEnemies(game->player);
-            if (player->enemyCount && check % 2)
-            {
-                player->health -= player->enemies[0]->damage;
-                showPlayeInfo(*player);
-            }
         }
-        check++;
+        if (player->enemyCount)
+        {
+            player->health -= player->enemies[0]->damage;
+            showPlayeInfo(*player);
+        }
     }
 }
 
@@ -2309,7 +2339,7 @@ void printPillars(Room *room)
 }
 void printEnemies(Room *room)
 {
-    if (room->enemy != NULL && room->enemyCount)
+    if (room->enemy != NULL && room->enemyCount && room->enemy->isVisible && room->enemy->health > 0)
     {
         attron(COLOR_PAIR(4));
         mvprintw(room->enemy->cord.y, room->enemy->cord.x, "%c", room->enemy->type);
