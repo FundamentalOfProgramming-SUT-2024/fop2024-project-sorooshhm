@@ -43,6 +43,10 @@ int changeLevel(Stair stair);
 extern int maxY,
     maxX;
 
+int enchantMode = 0;
+int healthEnchant = 0;
+int speedEnchant = 0;
+int enchantMove = 0;
 int mapMode = 0;
 volatile int damageTime = 30;
 int win_state = 0;
@@ -95,15 +99,51 @@ void startGame(User *user, Mix_Music *music)
     player->passway = NULL;
     player->health = 100;
     player->foodCount = 0;
-    player->gunCount = 1;
-    player->enchantCount = 0;
+    player->gunCount = 5;
+    player->enchantCount = 3;
+    player->power = 1;
     player->guns = (Gun **)malloc(100 * sizeof(Gun *));
-    player->guns[0] = (Gun *)malloc(sizeof(Gun));
-    player->guns[0]->count = 1;
-    player->guns[0]->type = 'g';
-    player->guns[0]->damage = 5; // khanjar
-    player->guns[0]->isUsed = true;
-    player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
+    // initialize guns
+    {
+        player->guns[0] = (Gun *)malloc(sizeof(Gun));
+        player->guns[0]->count = 1;
+        player->guns[0]->type = 'g';
+        player->guns[0]->damage = 5;
+        player->guns[0]->isUsed = true;
+        player->guns[1] = (Gun *)malloc(sizeof(Gun));
+        player->guns[1]->count = 0;
+        player->guns[1]->type = 'k';
+        player->guns[1]->damage = 12;
+        player->guns[1]->isUsed = true;
+        player->guns[2] = (Gun *)malloc(sizeof(Gun));
+        player->guns[2]->count = 0;
+        player->guns[2]->type = 'a';
+        player->guns[2]->damage = 15;
+        player->guns[2]->isUsed = true;
+        player->guns[3] = (Gun *)malloc(sizeof(Gun));
+        player->guns[3]->count = 0;
+        player->guns[3]->type = 't';
+        player->guns[3]->damage = 5;
+        player->guns[3]->isUsed = true;
+        player->guns[4] = (Gun *)malloc(sizeof(Gun));
+        player->guns[4]->count = 0;
+        player->guns[4]->type = 's';
+        player->guns[4]->damage = 10;
+        player->guns[4]->isUsed = true;
+    }
+    // initilize encants
+    {
+        player->enchants = (Enchant **)malloc(100 * sizeof(Enchant *));
+        player->enchants[0] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[0]->type = 'h';
+        player->enchants[0]->count = 0;
+        player->enchants[1] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[1]->type = 's';
+        player->enchants[1]->count = 0;
+        player->enchants[2] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[2]->type = 'd';
+        player->enchants[2]->count = 0;
+    }
     player->level = 0;
     player->acientKey = 0;
     player->brokenAcientKey = 0;
@@ -185,7 +225,7 @@ void resumeGame(User *user, Mix_Music *music)
         createLevel(game->levels[i], i);
     }
 
-    player = (Player *)malloc(sizeof(Player));
+    player = game->player;
     player->passway = NULL;
     player->room = NULL;
     int roomIndex = inRoom(game->levels[game->currentLevel]->rooms, game->levels[game->currentLevel]->roomsCount, game->player->cord);
@@ -224,13 +264,13 @@ void resumeGame(User *user, Mix_Music *music)
     }
     if (!game->player->enchantCount)
     {
-        game->player->enchants = (Enchant *)malloc(100 * sizeof(Enchant));
+        game->player->enchants = (Enchant **)malloc(100 * sizeof(Enchant *));
     }
 
-    player = game->player;
     player->enemyCount = 0;
     player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
     curGun = player->guns[0];
+    player->power = 1;
 
     showLevel(game->levels[game->currentLevel]);
 
@@ -330,9 +370,12 @@ int changeLevel(Stair stair)
         refresh();
         showLevel(game->levels[game->currentLevel]);
     }
-    player->enemyCount = 0;
-    marked_enemies[player->enemies[0]->id] = 0;
-    player->enemies[0] = NULL;
+    if (player->enemyCount)
+    {
+        player->enemyCount = 0;
+        marked_enemies[player->enemies[0]->id] = 0;
+        player->enemies[0] = NULL;
+    }
     return 1;
 }
 
@@ -572,8 +615,8 @@ void createLevel(Level *level, int levelIndex)
                 {
                     rooms[i]->doors[0].type = 's';
                     rooms[i]->doors[0].isVisible = false;
-                    rooms[i + 1]->doors[0].type = 's';
-                    rooms[i + 1]->doors[0].isVisible = false;
+                    // rooms[i + 1]->doors[0].type = 's';
+                    // rooms[i + 1]->doors[0].isVisible = false;
                 }
                 else if (i == roomsCounts - 1)
                 {
@@ -638,7 +681,7 @@ void createLevel(Level *level, int levelIndex)
             }
         }
         int num = rand();
-        if (num % 6)
+        if (num)
         {
             rooms[i]->enemyCount = 1;
 
@@ -1312,6 +1355,25 @@ int isNear(Point p, Point c)
     return 0;
 }
 
+void doEnchants(char type)
+{
+    if (type == 'h')
+    {
+        enchantMode = 1;
+        damageTime += 5;
+        healthEnchant = 1;
+    }
+    else if (type == 's')
+    {
+        // TODO
+    }
+    else if (type == 'd')
+    {
+        player->power = 2;
+        enchantMode = 1;
+    }
+}
+
 void handleMove()
 {
     int check = 1;
@@ -1329,6 +1391,19 @@ void handleMove()
             break;
         }
         char c = getchar();
+        if (enchantMode)
+        {
+            enchantMove++;
+        }
+        if (enchantMove >= 10)
+        {
+            enchantMode = 0;
+            enchantMove = 0;
+            if (healthEnchant)
+            {
+                damageTime -= 5;
+            }
+        }
         if (c == 27)
         {
             break;
@@ -1338,6 +1413,16 @@ void handleMove()
             if (player->enemyCount)
             {
                 Enemy *enemy = player->enemies[0];
+
+                if (curGun->count == 0)
+                {
+                    mvprintw(1, 1, "You dont have enough gun");
+                    refresh();
+                    getchar();
+                    mvprintw(1, 1, "                              ");
+                    refresh();
+                    continue;
+                }
                 if (curGun->type == 'g')
                 {
                     if (isNear(player->cord, enemy->cord))
@@ -1373,12 +1458,585 @@ void handleMove()
                 }
                 else if (curGun->type == 'k')
                 {
+                    mvprintw(1, 1, "Choose a diretion");
+                    refresh();
+                    char ch = getchar();
+                    if (ch == 's')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'a')
+                    {
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'd')
+                    {
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'w')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
                 }
                 else if (curGun->type == 'a')
                 {
+                    mvprintw(1, 1, "Choose a diretion");
+                    refresh();
+                    char ch = getchar();
+                    if (ch == 's')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'a')
+                    {
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'd')
+                    {
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'w')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
                 }
                 else if (curGun->type == 't')
                 {
+                    mvprintw(1, 1, "Choose a diretion");
+                    refresh();
+                    char ch = getchar();
+                    if (ch == 's')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'a')
+                    {
+                        // TODO disable enemies
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'd')
+                    {
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x + 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
+                    else if (ch == 'w')
+                    {
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
+                        {
+                            enemy->health -= curGun->damage;
+                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            refresh();
+                            // message for hitting enemy
+                            if (enemy->health <= 0)
+                            {
+                                mvprintw(1, 1, "You killed him !!!          ");
+                                refresh();
+                                player->enemyCount = 0;
+                                player->enemies[0] = NULL;
+                                enemy->isVisible = false;
+                                char c = mvinch(enemy->cord.y, enemy->cord.x - 1);
+                                if (c == ' ')
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, "#");
+                                }
+                                else
+                                {
+                                    mvprintw(enemy->cord.y, enemy->cord.x, ".");
+                                }
+                                refresh();
+                            }
+                        }
+                        else
+                        {
+                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            if (curGun)
+                                curGun->count--;
+                            if (player->room->guns == NULL)
+                            {
+                                player->room->guns = (Gun *)malloc(100 * sizeof(Gun));
+                            }
+                            player->room->guns[player->room->gunCount] = *curGun;
+                            player->room->guns[player->room->gunCount].isUsed = false;
+                            player->room->guns[player->room->gunCount].count = 1;
+                            player->room->guns[player->room->gunCount].cord.x = player->cord.x;
+                            player->room->guns[player->room->gunCount].cord.y = player->cord.y - 1;
+                            player->room->gunCount++;
+                            printRoom(player->room);
+
+                            refresh();
+                        }
+                    }
                 }
                 else if (curGun->type == 's')
                 {
@@ -1515,18 +2173,18 @@ void handleMove()
             {
                 // if (!player.usedFood[i])
                 // {
-                menu[i] = malloc(20 * sizeof(char));
-                if (player->enchants[i].type == 'h')
+                menu[i] = malloc(50 * sizeof(char));
+                if (player->enchants[i]->type == 'h')
                 {
-                    menu[i] = "Helath enchant ❤️‍🩹";
+                    sprintf(menu[i], "Helath enchant ❤️‍🩹  %d", player->enchants[i]->count);
                 }
-                else if (player->enchants[i].type == 's')
+                else if (player->enchants[i]->type == 's')
                 {
-                    menu[i] = "Speed enchant ⚡";
+                    sprintf(menu[i], "Speed enchant ⚡ %d", player->enchants[i]->count);
                 }
                 else
                 {
-                    menu[i] = "Damage enchant ☠️";
+                    sprintf(menu[i], "Damage enchant ☠️ %d", player->enchants[i]->count);
                 }
                 // }
             }
@@ -1540,6 +2198,8 @@ void handleMove()
             wmove(menuWin, 3, 25);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->enchantCount, 0);
+            if (player->enchants[highlight]->count)
+                player->enchants[highlight]->count--;
             wclear(menuWin);
             free(menu);
             clear();
@@ -1555,30 +2215,34 @@ void handleMove()
             WINDOW *menuWin = creaetMenuWindow(25, maxX / 2, maxY / 2 - 15, maxX / 4);
 
             char **menu = (char **)malloc(player->gunCount * sizeof(char *));
-            for (int i = 0; i < player->gunCount; i++)
+            for (int i = 0; i < 5; i++)
             {
                 // if (!player.usedFood[i])
                 // {
-                menu[i] = malloc(20 * sizeof(char));
+                menu[i] = malloc(100 * sizeof(char));
                 if (player->guns[i]->type == 'g')
                 {
-                    menu[i] = "Gorz ⚒";
+                    sprintf(menu[i], "Gorz ⚒  %d", player->guns[i]->count);
                 }
                 else if (player->guns[i]->type == 'k')
                 {
-                    menu[i] = "Khanjar 🗡️";
+                    sprintf(menu[i], "Khanjar 🗡️  %d", player->guns[i]->count);
                 }
                 else if (player->guns[i]->type == 'a')
                 {
-                    menu[i] = "Asa jadooyi 🪄";
+                    sprintf(menu[i], "Asa jadooyi 🪄  %d", player->guns[i]->count);
                 }
                 else if (player->guns[i]->type == 't')
                 {
-                    menu[i] = "➳";
+                    sprintf(menu[i], "Tir ➳  %d", player->guns[i]->count);
                 }
                 else
                 {
-                    menu[i] = "Shamshir ⚔️";
+                    sprintf(menu[i], "Shamshir ⚔️  %d", player->guns[i]->count);
+                }
+                if (curGun->type == player->guns[i]->type)
+                {
+                    strcat(menu[i], "   ✅");
                 }
                 // }
             }
@@ -1592,6 +2256,15 @@ void handleMove()
             wmove(menuWin, 3, 25);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->gunCount, 0);
+            if (player->guns[highlight]->count > 0)
+            {
+                curGun = player->guns[highlight];
+                mvprintw(1, 1, "Your current gun is %c", curGun->type);
+                refresh();
+                getchar();
+                mvprintw(1, 1, "                               ");
+                refresh();
+            }
             wclear(menuWin);
             free(menu);
             clear();
@@ -2129,7 +2802,18 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         if (ch == 'p')
         {
             Enchant e = findEnchant(cur, player->room);
-            player->enchants[player->enchantCount++] = e;
+            if (c == 'H')
+            {
+                player->enchants[0]->count += 1;
+            }
+            else if (c == 'R')
+            {
+                player->enchants[1]->count += 1;
+            }
+            else if (c == 'I')
+            {
+                player->enchants[2]->count += 1;
+            }
             c = '.';
         }
     }
@@ -2143,7 +2827,23 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         refresh();
         if (ch == 'p')
         {
-            player->guns[player->gunCount++] = &player->room->guns[gunIndex];
+            Gun gun = player->room->guns[gunIndex];
+            if (gun.type == 'k')
+            {
+                player->guns[1]->count += gun.count;
+            }
+            else if (gun.type == 'a')
+            {
+                player->guns[2]->count += gun.count;
+            }
+            else if (gun.type == 's')
+            {
+                player->guns[4]->count += gun.count;
+            }
+            else if (gun.type == 't')
+            {
+                player->guns[3]->count += gun.count;
+            }
             player->room->guns[gunIndex].isUsed = true;
             c = '.';
             mvprintw(y, x, "..");

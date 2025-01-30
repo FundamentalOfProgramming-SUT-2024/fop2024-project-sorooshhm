@@ -230,7 +230,7 @@ void saveGame(Game *game, User *user)
     fwrite(&player->gunCount, sizeof(int), 1, file);
     fwrite(player->guns, sizeof(Gun*), player->gunCount, file);
     fwrite(&player->enchantCount, sizeof(int), 1, file);
-    fwrite(player->enchants, sizeof(Enchant), player->enchantCount, file);
+    fwrite(player->enchants, sizeof(Enchant*), player->enchantCount, file);
     fwrite(&player->level, sizeof(int), 1, file);
     fwrite(&player->acientKey, sizeof(int), 1, file);
     fwrite(&player->brokenAcientKey, sizeof(int), 1, file);
@@ -342,8 +342,8 @@ int loadGame(Game *game, User *user)
     fread(player->guns, sizeof(Gun*), player->gunCount, file);
 
     fread(&player->enchantCount, sizeof(int), 1, file);
-    player->enchants = (Enchant *)malloc(sizeof(Enchant) * 100);
-    fread(player->enchants, sizeof(Enchant), player->enchantCount, file);
+    player->enchants = (Enchant **)malloc(sizeof(Enchant*) * 100);
+    fread(player->enchants, sizeof(Enchant*), player->enchantCount, file);
 
     fread(&player->level, sizeof(int), 1, file);
     fread(&player->acientKey, sizeof(int), 1, file);

@@ -67,6 +67,7 @@ typedef struct
     char type;
     bool isUsed;
     Point cord;
+    int count;
 } Enchant;
 
 typedef struct
@@ -128,7 +129,7 @@ typedef struct
     Room *room;
     Passway *passway;
     Gun **guns;
-    Enchant *enchants;
+    Enchant **enchants;
     int foodCount;
     int gunCount;
     int enchantCount;
@@ -139,6 +140,7 @@ typedef struct
     int brokenAcientKey;
     int enemyCount;
     Enemy **enemies;
+    int power;
 } Player;
 
 typedef struct
