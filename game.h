@@ -46,6 +46,8 @@ typedef struct
     int id;
     int moves;
     bool isVisible;
+    bool canMove;
+
 } Enemy;
 
 typedef struct

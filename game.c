@@ -47,6 +47,7 @@ int enchantMode = 0;
 int healthEnchant = 0;
 int speedEnchant = 0;
 int enchantMove = 0;
+int speed = 1;
 int mapMode = 0;
 volatile int damageTime = 30;
 int win_state = 0;
@@ -170,7 +171,10 @@ void startGame(User *user, Mix_Music *music)
     if (u->isAuth)
     {
         player->enemyCount = 0;
-        player->enemies[0] = NULL;
+        if (player->enemies)
+        {
+            player->enemies[0] = NULL;
+        }
         saveGame(game, user);
     }
 
@@ -287,7 +291,14 @@ void resumeGame(User *user, Mix_Music *music)
     pthread_cancel(damageThread);
     // saving the game
     if (u->isAuth)
+    {
+        player->enemyCount = 0;
+        if (player->enemies)
+        {
+            player->enemies[0] = NULL;
+        }
         saveGame(game, user);
+    }
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < game->levels[i]->roomsCount; j++)
@@ -519,7 +530,7 @@ void createLevel(Level *level, int levelIndex)
                 }
                 count = randomNumber(0, 1);
                 rooms[i]->gunCount = count;
-                rooms[i]->guns = (Gun *)malloc(count * sizeof(Gun));
+                rooms[i]->guns = (Gun *)malloc(100 * sizeof(Gun));
                 for (int j = 0; j < count; j++)
                 {
                     int num = rand();
@@ -730,6 +741,7 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->enemy->isVisible = false;
             rooms[i]->enemy->id = id++;
             rooms[i]->enemy->moves = 0;
+            rooms[i]->enemy->canMove = true;
         }
 
         if (i == 0 && levelIndex != 0)
@@ -1270,7 +1282,7 @@ bool isInRoom(Room *room, Point p)
 int isWay(Point p)
 {
     char c = mvinch(p.y, p.x);
-    if (c != '|' && c != '-' && c != '_' && c != '@' && c != ' ' && c != '&' && c != '=')
+    if (c != '|' && c != '-' && c != '_' && c != '@' && c != ' ' && c != '&' && c != '=' && !(p.x == player->cord.x && p.y == player->cord.y))
     {
         return 1;
     }
@@ -1292,6 +1304,8 @@ void moveEnemies(Player *player)
         Enemy *enemy = player->enemies[i];
         Point p;
         Point prev_p = enemy->cord;
+        if (!enemy->canMove)
+            continue;
         int move_x = enemy->cord.x > player->cord.x ? -1 : 1;
         p.x = enemy->cord.x + move_x;
         p.y = enemy->cord.y;
@@ -1374,6 +1388,16 @@ void doEnchants(char type)
     }
 }
 
+int isPlayerWay(int x, int y)
+{
+    char c = mvinch(y, x);
+    if ((c == '.' || c == '+' || c == '#' || c == '?') && x >= 0 && x <= maxX && y > 3 && y <= maxY)
+    {
+        return 1;
+    }
+    return 0;
+}
+
 void handleMove()
 {
     int check = 1;
@@ -1395,13 +1419,17 @@ void handleMove()
         {
             enchantMove++;
         }
-        if (enchantMove >= 10)
+        if (enchantMove >= 25)
         {
             enchantMode = 0;
             enchantMove = 0;
             if (healthEnchant)
             {
                 damageTime -= 5;
+            }
+            if (speedEnchant)
+            {
+                speedEnchant = 0;
             }
         }
         if (c == 27)
@@ -1427,7 +1455,7 @@ void handleMove()
                 {
                     if (isNear(player->cord, enemy->cord))
                     {
-                        enemy->health -= curGun->damage;
+                        enemy->health -= curGun->damage * player->power;
                         mvprintw(1, 1, "Cool ! you hit the enemy ");
                         refresh();
                         // message for hitting enemy
@@ -1465,7 +1493,7 @@ void handleMove()
                     {
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1511,7 +1539,7 @@ void handleMove()
                     {
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1558,7 +1586,7 @@ void handleMove()
                     {
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1605,7 +1633,7 @@ void handleMove()
                     {
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1656,9 +1684,11 @@ void handleMove()
                     char ch = getchar();
                     if (ch == 's')
                     {
-                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 10)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
+                            enemy->canMove = false;
+
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1703,9 +1733,11 @@ void handleMove()
                     }
                     else if (ch == 'a')
                     {
-                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 10)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
+                            enemy->canMove = false;
+
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1750,9 +1782,11 @@ void handleMove()
                     }
                     else if (ch == 'd')
                     {
-                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
+                        if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 10)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
+                            enemy->canMove = false;
+
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1797,9 +1831,10 @@ void handleMove()
                     }
                     else if (ch == 'w')
                     {
-                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
+                        if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 10)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
+                            enemy->canMove = false;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1852,7 +1887,7 @@ void handleMove()
                     {
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1900,7 +1935,7 @@ void handleMove()
                         // TODO disable enemies
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1947,7 +1982,7 @@ void handleMove()
                     {
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1994,7 +2029,7 @@ void handleMove()
                     {
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
-                            enemy->health -= curGun->damage;
+                            enemy->health -= curGun->damage * player->power;
                             mvprintw(1, 1, "Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2042,7 +2077,7 @@ void handleMove()
                 {
                     if (isNear(player->cord, enemy->cord))
                     {
-                        enemy->health -= curGun->damage;
+                        enemy->health -= curGun->damage * player->power;
                         mvprintw(1, 1, "Cool ! you hit the enemy ");
                         refresh();
                         // message for hitting enemy
@@ -2075,18 +2110,50 @@ void handleMove()
         }
         else if (c == 'w' || c == '8')
         {
+            if (speedEnchant)
+            {
+                if (isPlayerWay(game->player->cord.x, game->player->cord.y - 2))
+                {
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 2);
+                    continue;
+                }
+            }
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 1);
         }
         else if (c == 's' || c == '2')
         {
+            if (speedEnchant)
+            {
+                if (isPlayerWay(game->player->cord.x, game->player->cord.y + 2))
+                {
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y + 2);
+                    continue;
+                }
+            }
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y + 1);
         }
         else if (c == 'd' || c == '6')
         {
+            if (speedEnchant)
+            {
+                if (isPlayerWay(game->player->cord.x + 2, game->player->cord.y))
+                {
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 2, game->player->cord.y);
+                    continue;
+                }
+            }
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 1, game->player->cord.y);
         }
         else if (c == 'a' || c == '4')
         {
+            if (speedEnchant)
+            {
+                if (isPlayerWay(game->player->cord.x - 2, game->player->cord.y))
+                {
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 2, game->player->cord.y);
+                    continue;
+                }
+            }
             movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y);
         }
         if (c == 'q')
@@ -2199,7 +2266,18 @@ void handleMove()
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->enchantCount, 0);
             if (player->enchants[highlight]->count)
+            {
                 player->enchants[highlight]->count--;
+                enchantMode = 1;
+                if (player->enchants[highlight]->type == 'h')
+                {
+                    healthEnchant = 1;
+                }
+                if (player->enchants[highlight]->type == 's')
+                {
+                    speedEnchant = 1;
+                }
+            }
             wclear(menuWin);
             free(menu);
             clear();
@@ -2275,10 +2353,10 @@ void handleMove()
         {
             win_state = 1;
         }
-        if ((c == 'w' || c == 'a' || c == 'd' || c == 's'))
-        {
-            moveEnemies(game->player);
-        }
+        // if ((c == 'w' || c == 'a' || c == 'd' || c == 's'))
+        // {
+        moveEnemies(game->player);
+        // }
         if (player->enemyCount)
         {
             player->health -= player->enemies[0]->damage;
