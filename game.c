@@ -18,6 +18,8 @@
 #define MIN_HEIGHT 10
 #define MAX_WIDTH 16
 #define MIN_WIDTH 10
+#define MAX(a, b) a > b ? a : b
+#define MIN(a, b) a > b ? b : a
 
 void handleMove();
 void moveEnemies(Player *player);
@@ -39,6 +41,7 @@ void *damagePlayer(void *player);
 void lose();
 void createLevel(Level *level, int);
 int changeLevel(Stair stair);
+void printNightmareRoom(Room *room);
 
 extern int maxY,
     maxX;
@@ -71,7 +74,6 @@ void freeArr()
 
 void startGame(User *user, Mix_Music *music)
 {
-
     freeArr();
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -170,7 +172,7 @@ void startGame(User *user, Mix_Music *music)
 
     pthread_cancel(damageThread);
     // saving the game
-    if (u->isAuth)
+    if (u->isAuth && !win_state && player->health > 0)
     {
         player->enemyCount = 0;
         if (player->enemies)
@@ -210,7 +212,7 @@ int inPassway(Passway **passways, int count, Point p)
 void resumeGame(User *user, Mix_Music *music)
 {
     freeArr();
-
+    win_state = 0;
     struct timeval tv;
     gettimeofday(&tv, NULL);
     milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
@@ -264,15 +266,47 @@ void resumeGame(User *user, Mix_Music *music)
     game->player->level = game->currentLevel;
     // mvprintw(1, 1, "passway index %d", game->player->passway->index);
     // refresh();
-    if (!game->player->gunCount)
+    // initialize guns
     {
-        game->player->guns = (Gun **)malloc(100 * sizeof(Gun));
+        player->guns[0] = (Gun *)malloc(sizeof(Gun));
+        player->guns[0]->count = 1;
+        player->guns[0]->type = 'g';
+        player->guns[0]->damage = 5;
+        player->guns[0]->isUsed = true;
+        player->guns[1] = (Gun *)malloc(sizeof(Gun));
+        player->guns[1]->count = 0;
+        player->guns[1]->type = 'k';
+        player->guns[1]->damage = 12;
+        player->guns[1]->isUsed = true;
+        player->guns[2] = (Gun *)malloc(sizeof(Gun));
+        player->guns[2]->count = 0;
+        player->guns[2]->type = 'a';
+        player->guns[2]->damage = 15;
+        player->guns[2]->isUsed = true;
+        player->guns[3] = (Gun *)malloc(sizeof(Gun));
+        player->guns[3]->count = 0;
+        player->guns[3]->type = 't';
+        player->guns[3]->damage = 5;
+        player->guns[3]->isUsed = true;
+        player->guns[4] = (Gun *)malloc(sizeof(Gun));
+        player->guns[4]->count = 0;
+        player->guns[4]->type = 's';
+        player->guns[4]->damage = 10;
+        player->guns[4]->isUsed = true;
     }
-    if (!game->player->enchantCount)
+    // initilize encants
     {
-        game->player->enchants = (Enchant **)malloc(100 * sizeof(Enchant *));
+        player->enchants = (Enchant **)malloc(100 * sizeof(Enchant *));
+        player->enchants[0] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[0]->type = 'h';
+        player->enchants[0]->count = 0;
+        player->enchants[1] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[1]->type = 's';
+        player->enchants[1]->count = 0;
+        player->enchants[2] = (Enchant *)malloc(sizeof(Enchant));
+        player->enchants[2]->type = 'd';
+        player->enchants[2]->count = 0;
     }
-
     player->enemyCount = 0;
     player->enemies = (Enemy **)malloc(sizeof(Enemy *) * 10);
     curGun = player->guns[0];
@@ -292,7 +326,7 @@ void resumeGame(User *user, Mix_Music *music)
 
     pthread_cancel(damageThread);
     // saving the game
-    if (u->isAuth)
+    if (u->isAuth && !win_state && player->health > 0)
     {
         player->enemyCount = 0;
         if (player->enemies)
@@ -336,15 +370,16 @@ void win()
     }
 
     WINDOW *win = newwin(maxY, maxX, 0, 0);
+    char *filename = malloc(100 * sizeof(char));
+    sprintf(filename, "./games/%s", u->username);
     mvwprintw(win, maxY / 2, 50, "You won !!!! %lc", L'😍');
     mvwprintw(win, maxY / 2 + 2, 50, "Your golds : %d Your score : %d", player->gold, (player->gold * u->setting.level) / 5);
     wrefresh(win);
     sleep(5);
     wclear(win);
     clear();
-    // char *filename = "./games/";
-    // strcat(filename, u->username);
-    // remove(filename);
+    wrefresh(win);
+    remove(filename);
 }
 
 int changeLevel(Stair stair)
@@ -487,8 +522,8 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->enemyCount = 1;
 
             Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
-            enemy->type = 'B';
-            enemy->health = 50;
+            enemy->type = 'S';
+            enemy->health = 300;
             enemy->damage = 3;
             rooms[i]->enemyCount = 1;
             rooms[i]->enemy = enemy;
@@ -781,7 +816,7 @@ void createLevel(Level *level, int levelIndex)
                         rooms[i]->golds[j].count = 5;
                     }
                 }
-                rooms[i]->type = 'n';
+                rooms[i]->type = 'k';
             }
         }
         int num = rand();
@@ -885,6 +920,9 @@ void lose()
     sleep(5);
     wclear(lostWin);
     clear();
+    char *filename = malloc(100 * sizeof(char));
+    sprintf(filename, "./games/%s", u->username);
+    remove(filename);
 }
 
 void *damagePlayer(void *args)
@@ -3036,6 +3074,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             showPlayeInfo(*player);
         }
     }
+
     if (c == 'H' || c == 'R' || c == 'I')
     {
         mvprintw(1, 1, "click <p> to pick enchant");
@@ -3117,6 +3156,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         }
         mvprintw(player->cord.y, player->cord.x, "@");
         refresh();
+
         if (u->setting.color == 1)
         {
             attroff(COLOR_PAIR(2));
@@ -3134,7 +3174,10 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         trapMode = 1;
         showPlayeInfo(*player);
     }
-
+    if (player->room->type == 'k' && player->state == 1)
+    {
+        printNightmareRoom(player->room);
+    }
     int passwayIndex = findPassway(passways, roomsCount - 1, player->cord);
     if (passwayIndex != -1)
     {
@@ -3159,6 +3202,12 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     }
 }
 
+int isInNightmare(Point a, Point b)
+{
+    if (a.x >= b.x - 1 && a.x <= b.x + 1 && a.y >= b.y - 1 && a.y <= b.y + 1)
+        return 1;
+    return 0;
+}
 void printDoors(Room *room)
 {
     WINDOW *screen = mapMode ? mapWin : stdscr;
@@ -3170,22 +3219,35 @@ void printDoors(Room *room)
         }
         else if (room->doors[i].type == 'l' && room->doors[1 - i].type != 's')
         {
+
             attron(COLOR_PAIR(1));
             mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
             attroff(COLOR_PAIR(1));
-            attron(COLOR_PAIR(2));
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-            attroff(COLOR_PAIR(2));
+            Point p;
+            p.y = room->doors[i].cord.y + 3;
+            p.x = room->doors[i].cord.x + 1;
+            if (isInNightmare(p, player->cord))
+            {
+                attron(COLOR_PAIR(2));
+                mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+                attroff(COLOR_PAIR(2));
+            }
         }
         else if (room->doors[i].type == 'h' && room->doors[1 - i].type != 's')
         {
             attron(COLOR_PAIR(1));
             mvwprintw(screen, room->doors[i].cord.y, room->doors[i].cord.x, "@");
             attroff(COLOR_PAIR(1));
-            attron(COLOR_PAIR(2));
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-            mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
-            attroff(COLOR_PAIR(2));
+            Point p;
+            p.y = room->doors[i].cord.y + 3;
+            p.x = room->doors[i].cord.x + 1;
+            if (isInNightmare(p, player->cord))
+            {
+                attron(COLOR_PAIR(2));
+                mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+                mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
+                attroff(COLOR_PAIR(2));
+            }
         }
         else if (room->doors[i].type == 's')
         {
@@ -3200,6 +3262,11 @@ void printFoods(Room *room)
     {
         if (!room->foods[i].isUsed)
         {
+            if (room->type == 'k')
+            {
+                if (!isInNightmare(room->foods[i].cord, player->cord))
+                    return;
+            }
             if (room->foods[i].type == 'a')
             {
                 attron(COLOR_PAIR(1));
@@ -3226,20 +3293,44 @@ void printTraps(Room *room)
     for (int i = 0; i < room->trapCount; i++)
     {
         if (room->traps[i].isVisible)
+        {
+            if (room->type == 'k')
+            {
+                if (!isInNightmare(room->traps[i].cord, player->cord))
+                    return;
+            }
             mvprintw(room->traps[i].cord.y, room->traps[i].cord.x, "^");
+        }
     }
     refresh();
 }
 void printStair(Room *room)
 {
     if (room->stairCount)
+    {
+        if (room->type == 'k')
+        {
+            if (!isInNightmare(room->stair.cord, player->cord))
+                return;
+        }
         mvprintw(room->stair.cord.y, room->stair.cord.x, ">");
+    }
     refresh();
 }
 void printWindow(Room *room)
 {
     if (room->window.x)
+    {
+        if (room->type == 'k')
+        {
+            Point p;
+            p.x = room->window.x;
+            p.y = room->window.y;
+            if (!isInNightmare(p, player->cord))
+                return;
+        }
         mvprintw(room->window.y, room->window.x, "=");
+    }
     refresh();
 }
 void printGolds(Room *room)
@@ -3248,6 +3339,11 @@ void printGolds(Room *room)
     {
         if (!room->golds[i].isUsed)
         {
+            if (room->type == 'k')
+            {
+                if (!isInNightmare(room->golds[i].cord, player->cord))
+                    return;
+            }
             if (room->golds[i].type == 'g')
                 mvprintw(room->golds[i].cord.y, room->golds[i].cord.x, "%lc", L'🪙');
             else
@@ -3262,6 +3358,11 @@ void printGuns(Room *room)
     {
         if (!room->guns[i].isUsed)
         {
+            if (room->type == 'k')
+            {
+                if (!isInNightmare(room->guns[i].cord, player->cord))
+                    return;
+            }
             if (room->guns[i].type == 'g')
                 mvprintw(room->guns[i].cord.y, room->guns[i].cord.x, "%lc", L'⚒');
             else if (room->guns[i].type == 'k')
@@ -3282,6 +3383,11 @@ void printEnchants(Room *room)
     {
         if (!room->enchants[i].isUsed)
         {
+            if (room->type == 'k')
+            {
+                if (!isInNightmare(room->enchants[i].cord, player->cord))
+                    return;
+            }
             if (room->enchants[i].type == 'h')
                 mvprintw(room->enchants[i].cord.y, room->enchants[i].cord.x, "H");
             else if (room->enchants[i].type == 's')
@@ -3296,6 +3402,11 @@ void printPillars(Room *room)
 {
     if (room->pillar.cord.x != room->pillar.cord.y != 0)
     {
+        if (room->type == 'k')
+        {
+            if (!isInNightmare(room->pillar.cord, player->cord))
+                return;
+        }
         mvprintw(room->pillar.cord.y, room->pillar.cord.x, "O");
     }
 }
@@ -3350,6 +3461,88 @@ void printJustRooms(Room *room)
     }
     printDoors(room);
 }
+void printNightmareRoom(Room *room)
+{
+    int x, y, width, height;
+    x = room->cord.x;
+    y = room->cord.y;
+    height = room->height;
+    width = room->width;
+    attron(COLOR_PAIR(4));
+
+    WINDOW *screen = mapMode ? mapWin : stdscr;
+    for (int j = y + 2; j < y + height - 1; j++)
+    {
+        for (int k = x + 1; k < x + width; k++)
+        {
+            mvwprintw(screen, j, k, " ");
+        }
+    }
+    for (int j = player->cord.y - 1; j <= player->cord.y + 1; j++)
+    {
+        for (int k = player->cord.x - 1; k <= player->cord.x + 1; k++)
+        {
+            if (k == player->cord.x && j == player->cord.y)
+            {
+                continue;
+            }
+            mvwprintw(screen, j, k, ".");
+        }
+    }
+    for (int j = x + 1; j < x + width; j++)
+    {
+        mvwprintw(screen, y + 1, j, "-");
+        mvwprintw(screen, y + height - 1, j, "-");
+    }
+    for (int j = y + 2; j < y + height - 1; j++)
+    {
+        mvwprintw(screen, j, x, "|");
+        mvwprintw(screen, j, x + width, "|");
+    }
+    printDoors(room);
+    printDoors(room);
+    printFoods(room);
+    printTraps(room);
+    printStair(room);
+    printWindow(room);
+    printGolds(room);
+    printGuns(room);
+    printEnchants(room);
+    printPillars(room);
+    printEnemies(room);
+    if (room->keyCount)
+    {
+        Point p;
+        p.y = room->cord.y + height - 3;
+        p.x = room->cord.x + width - 2;
+        if (isInNightmare(p, player->cord))
+        {
+            attron(COLOR_PAIR(3));
+            mvprintw(room->cord.y + height - 3, room->cord.x + width - 2, "%lc", L'\u25B3');
+            attroff(COLOR_PAIR(3));
+        }
+    }
+    attroff(COLOR_PAIR(4));
+    if (u->setting.color == 1)
+    {
+        attron(COLOR_PAIR(2));
+    }
+    else if (u->setting.color == 2)
+    {
+        attron(COLOR_PAIR(1));
+    }
+    mvprintw(player->cord.y, player->cord.x, "@");
+    refresh();
+
+    if (u->setting.color == 1)
+    {
+        attroff(COLOR_PAIR(2));
+    }
+    else if (u->setting.color == 2)
+    {
+        attroff(COLOR_PAIR(1));
+    }
+}
 void printRoom(Room *room)
 {
     int x, y, width, height;
@@ -3366,6 +3559,10 @@ void printRoom(Room *room)
     {
         attron(COLOR_PAIR(3));
     }
+    else if (room->type == 'k')
+    {
+        attron(COLOR_PAIR(4));
+    }
     for (int j = x + 1; j < x + width; j++)
     {
         mvwprintw(screen, y + 1, j, "-");
@@ -3375,10 +3572,12 @@ void printRoom(Room *room)
     {
         mvwprintw(screen, j, x, "|");
         mvwprintw(screen, j, x + width, "|");
-
-        for (int k = x + 1; k < x + width; k++)
+        if (room->type != 'k')
         {
-            mvwprintw(screen, j, k, ".");
+            for (int k = x + 1; k < x + width; k++)
+            {
+                mvwprintw(screen, j, k, ".");
+            }
         }
     }
     if (room->type == 't')
@@ -3389,21 +3588,28 @@ void printRoom(Room *room)
     {
         attroff(COLOR_PAIR(3));
     }
-    printDoors(room);
-    printFoods(room);
-    printTraps(room);
-    printStair(room);
-    printWindow(room);
-    printGolds(room);
-    printGuns(room);
-    printEnchants(room);
-    printPillars(room);
-    printEnemies(room);
-    if (room->keyCount)
+    else if (room->type == 'k')
     {
-        attron(COLOR_PAIR(3));
-        mvprintw(room->cord.y + height - 3, room->cord.x + width - 2, "%lc", L'\u25B3');
-        attroff(COLOR_PAIR(3));
+        attroff(COLOR_PAIR(4));
+    }
+    if (room->type != 'k')
+    {
+        printDoors(room);
+        printFoods(room);
+        printTraps(room);
+        printStair(room);
+        printWindow(room);
+        printGolds(room);
+        printGuns(room);
+        printEnchants(room);
+        printPillars(room);
+        printEnemies(room);
+        if (room->keyCount)
+        {
+            attron(COLOR_PAIR(3));
+            mvprintw(room->cord.y + height - 3, room->cord.x + width - 2, "%lc", L'\u25B3');
+            attroff(COLOR_PAIR(3));
+        }
     }
     refresh();
 }
