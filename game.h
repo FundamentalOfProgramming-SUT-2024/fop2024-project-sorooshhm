@@ -35,6 +35,7 @@ typedef struct
     char type;
     bool isUsed;
     Point cord;
+    long long int startTime;
 } Food;
 
 typedef struct
@@ -47,7 +48,6 @@ typedef struct
     int moves;
     bool isVisible;
     bool canMove;
-
 } Enemy;
 
 typedef struct
@@ -133,6 +133,7 @@ typedef struct
     Gun **guns;
     Enchant **enchants;
     int foodCount;
+    Food *foods;
     int gunCount;
     int enchantCount;
     int level;

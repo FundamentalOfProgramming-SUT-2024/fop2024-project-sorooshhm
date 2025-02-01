@@ -105,6 +105,7 @@ void startGame(User *user, Mix_Music *music)
     player->enchantCount = 3;
     player->power = 1;
     player->guns = (Gun **)malloc(100 * sizeof(Gun *));
+    player->foods = (Food *)malloc(100 * sizeof(Food));
     // initialize guns
     {
         player->guns[0] = (Gun *)malloc(sizeof(Gun));
@@ -521,10 +522,43 @@ void createLevel(Level *level, int levelIndex)
                 rooms[i]->foods = (Food *)malloc(count * sizeof(Food));
                 for (int j = 0; j < count; j++)
                 {
-                    rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
-                    rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
-                    rooms[i]->foods[j].health = 3;
-                    rooms[i]->foods[j].isUsed = false;
+                    int x = rand() % 4;
+                    if (x == 1)
+                    {
+                        // normal
+                        rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                        rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                        rooms[i]->foods[j].health = 3;
+                        rooms[i]->foods[j].type = 'n';
+                        rooms[i]->foods[j].isUsed = false;
+                    }
+                    else if (x == 2)
+                    {
+                        // aala
+                        rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                        rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                        rooms[i]->foods[j].health = 5;
+                        rooms[i]->foods[j].type = 'a';
+                        rooms[i]->foods[j].isUsed = false;
+                    }
+                    else if (x == 3)
+                    {
+                        // jadoyi
+                        rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                        rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                        rooms[i]->foods[j].health = 5;
+                        rooms[i]->foods[j].type = 'j';
+                        rooms[i]->foods[j].isUsed = false;
+                    }
+                    else
+                    {
+                        // fased
+                        rooms[i]->foods[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                        rooms[i]->foods[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                        rooms[i]->foods[j].health = -3;
+                        rooms[i]->foods[j].type = 'f';
+                        rooms[i]->foods[j].isUsed = false;
+                    }
                 }
                 count = randomNumber(1, 3);
                 rooms[i]->trapCount = count;
@@ -2235,8 +2269,20 @@ void handleMove()
             {
                 // if (!player.usedFood[i])
                 // {
-                menu[i] = malloc(20 * sizeof(char));
-                sprintf(menu[i], "food %d", i + 1);
+                menu[i] = malloc(100 * sizeof(char));
+                Food f = player->foods[i];
+                if (f.type == 'n' || f.type == 'f')
+                {
+                    menu[i] = "Normal Food ";
+                }
+                else if (f.type == 'a')
+                {
+                    menu[i] = "Excellent Food 🍖";
+                }
+                else if (f.type == 'j')
+                {
+                    menu[i] = "Magic Food 🍕";
+                }
                 // }
             }
 
@@ -2249,8 +2295,48 @@ void handleMove()
             wmove(menuWin, 3, 25);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->foodCount, 0);
-            player->foodCount--;
-            player->health += 3;
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            Food s = player->foods[highlight];
+            long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+            if (newmil - s.startTime > 20 * 1000)
+            {
+                if (s.type == 'a' || s.type == 'j')
+                {
+                    s.health = 3;
+                    s.type = 'n';
+                }
+                else
+                {
+                    s.health = -3;
+                }
+            }
+            if (s.type == 'a')
+            {
+                enchantMode = 1;
+                enchantMove = 5;
+                player->power = 2;
+            }
+            else if (s.type == 'j')
+            {
+                enchantMode = 1;
+                enchantMove = 5;
+                speedEnchant = 1;
+            }
+            player->health += s.health;
+            player->foods[highlight].type = 'x';
+            Food *newList = (Food *)malloc(100 * sizeof(Food));
+            int count = 0;
+            for (int i = 0; i < player->foodCount; i++)
+            {
+                if (player->foods[i].type == 'x')
+                {
+                    continue;
+                }
+                newList[count++] = player->foods[i];
+            }
+            player->foods = newList;
+            player->foodCount = count;
             getchar();
             wclear(menuWin);
             free(menu);
@@ -2906,8 +2992,13 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     {
         if (player->foodCount < 5)
         {
-            findFood(cur, player->room);
-            player->foodCount++;
+            Food f = findFood(cur, player->room);
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            long long newmil = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+            f.startTime = newmil;
+            player->foods[player->foodCount++] = f;
+            // player->foodCount += 1;
             c = '.';
             showPlayeInfo(*player);
         }
@@ -3075,7 +3166,25 @@ void printFoods(Room *room)
     for (int i = 0; i < room->foodCount; i++)
     {
         if (!room->foods[i].isUsed)
+        {
+            if (room->foods[i].type == 'a')
+            {
+                attron(COLOR_PAIR(1));
+            }
+            else if (room->foods[i].type == 'j')
+            {
+                attron(COLOR_PAIR(3));
+            }
             mvprintw(room->foods[i].cord.y, room->foods[i].cord.x, "%%");
+            if (room->foods[i].type == 'a')
+            {
+                attroff(COLOR_PAIR(1));
+            }
+            else if (room->foods[i].type == 'j')
+            {
+                attroff(COLOR_PAIR(3));
+            }
+        }
     }
     refresh();
 }
