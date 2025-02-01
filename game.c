@@ -49,6 +49,7 @@ int speedEnchant = 0;
 int enchantMove = 0;
 int speed = 1;
 int mapMode = 0;
+int lastRoom = 0;
 volatile int damageTime = 30;
 int win_state = 0;
 WINDOW *mapWin;
@@ -482,7 +483,33 @@ void createLevel(Level *level, int levelIndex)
                 rooms[i]->traps[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
                 rooms[i]->traps[j].isVisible = false;
             }
+            rooms[i]->enemyCount = 1;
+
+            Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
+            enemy->type = 'B';
+            enemy->health = 50;
+            enemy->damage = 3;
+            rooms[i]->enemyCount = 1;
+            rooms[i]->enemy = enemy;
+            rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
+            rooms[i]->enemy->cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
+            rooms[i]->enemy->isVisible = false;
+            rooms[i]->enemy->id = id++;
+            rooms[i]->enemy->moves = 0;
+            rooms[i]->enemy->canMove = true;
             rooms[i]->type = 'g';
+            count = 5;
+            rooms[i]->goldCount = count;
+            rooms[i]->golds = (Gold *)malloc(count * sizeof(Gold));
+            for (int j = 0; j < count; j++)
+            {
+                int num = rand();
+                rooms[i]->golds[j].cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 2);
+                rooms[i]->golds[j].cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 3);
+                rooms[i]->golds[j].isUsed = false;
+                rooms[i]->golds[j].type = 'b';
+                rooms[i]->golds[j].count = 10;
+            }
         }
         else
         {
@@ -692,7 +719,7 @@ void createLevel(Level *level, int levelIndex)
             }
         }
         int num = rand();
-        if (num)
+        if (num % 4 == 1)
         {
             rooms[i]->enemyCount = 1;
 
@@ -2114,7 +2141,8 @@ void handleMove()
             {
                 if (isPlayerWay(game->player->cord.x, game->player->cord.y - 2))
                 {
-                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 2);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 1);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y - 1);
                     continue;
                 }
             }
@@ -2126,7 +2154,8 @@ void handleMove()
             {
                 if (isPlayerWay(game->player->cord.x, game->player->cord.y + 2))
                 {
-                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y + 2);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y + 1);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x, game->player->cord.y + 1);
                     continue;
                 }
             }
@@ -2138,7 +2167,8 @@ void handleMove()
             {
                 if (isPlayerWay(game->player->cord.x + 2, game->player->cord.y))
                 {
-                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 2, game->player->cord.y);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 1, game->player->cord.y);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x + 1, game->player->cord.y);
                     continue;
                 }
             }
@@ -2150,7 +2180,8 @@ void handleMove()
             {
                 if (isPlayerWay(game->player->cord.x - 2, game->player->cord.y))
                 {
-                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 2, game->player->cord.y);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y);
+                    movePlayer(game->player, level->rooms, level->passways, level->roomsCount, game->player->cord.x - 1, game->player->cord.y);
                     continue;
                 }
             }
@@ -2530,8 +2561,19 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
 {
     if (game->currentLevel == 3 && player->room->index == game->levels[game->currentLevel]->roomsCount - 1)
     {
-        win_state = 1;
-        return;
+        // win_state = 1;
+        if (!lastRoom)
+        {
+            lastRoom = 1;
+        }
+        else
+        {
+            if (player->room->enemy->health <= 0)
+            {
+                win_state = 1;
+                return;
+            }
+        }
     }
     char c = mvinch(y, x);
     refresh();
