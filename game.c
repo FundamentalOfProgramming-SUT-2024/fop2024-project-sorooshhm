@@ -1005,8 +1005,9 @@ void showPlayeInfo(Player player)
     mvwprintw(infoWin, 2, 2, "Level : %d", player.level + 1);
     mvwprintw(infoWin, 4, 2, "Health ❤️ : %d    ", player.health);
     mvwprintw(infoWin, 6, 2, "Foods 🌭 : %d", player.foodCount);
-    mvwprintw(infoWin, 8, 2, "Keys 🗝️ : %d", player.acientKey);
-    mvwprintw(infoWin, 10, 2, "Broken keys 🔐 : %d", player.brokenAcientKey);
+    mvwprintw(infoWin, 8, 2, "Golds 🪙 : %d", player.gold);
+    mvwprintw(infoWin, 10, 2, "Keys 🗝️ : %d", player.acientKey);
+    mvwprintw(infoWin, 12, 2, "Broken keys 🔐 : %d", player.brokenAcientKey);
     char *gunString = malloc(100 * sizeof(char));
     if (curGun->type == 'g')
     {
@@ -1028,8 +1029,8 @@ void showPlayeInfo(Player player)
     {
         gunString = "Sword ⚔️";
     }
-    mvwprintw(infoWin, 12, 2, "Current gun 🛡️ :");
-    mvwprintw(infoWin, 13, 4, "%s", gunString);
+    mvwprintw(infoWin, 14, 2, "Current gun 🛡️ :");
+    mvwprintw(infoWin, 15, 4, "%s", gunString);
     wrefresh(infoWin);
 }
 
