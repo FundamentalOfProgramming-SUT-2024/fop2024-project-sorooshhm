@@ -339,7 +339,7 @@ int loadGame(Game *game, User *user)
     fread(&player->brokenAcientKey, sizeof(int), 1, file);
     fread(&player->foodCount, sizeof(int), 1, file);
     player->foods = (Food*)malloc(sizeof(Food) * 100);
-    fread(player->foods, sizeof(Gun *), player->foodCount, file);
+    fread(player->foods, sizeof(Food), player->foodCount, file);
 
     fread(&player->gunCount, sizeof(int), 1, file);
     player->guns = (Gun **)malloc(sizeof(Gun *) * 100);

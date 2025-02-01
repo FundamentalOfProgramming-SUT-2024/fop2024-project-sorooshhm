@@ -14,10 +14,10 @@
 #include "form.h"
 #include "db.h"
 
-#define MAX_HEIGHT 12
-#define MIN_HEIGHT 10
-#define MAX_WIDTH 16
-#define MIN_WIDTH 10
+#define MAX_HEIGHT 10
+#define MIN_HEIGHT 8
+#define MAX_WIDTH 15
+#define MIN_WIDTH 9
 #define MAX(a, b) a > b ? a : b
 #define MIN(a, b) a > b ? b : a
 
@@ -42,6 +42,7 @@ void lose();
 void createLevel(Level *level, int);
 int changeLevel(Stair stair);
 void printNightmareRoom(Room *room);
+void showChar();
 
 extern int maxY,
     maxX;
@@ -56,6 +57,8 @@ int lastRoom = 0;
 volatile int damageTime = 30;
 int win_state = 0;
 WINDOW *mapWin;
+WINDOW *infoWin;
+WINDOW *messageWin;
 Game *game;
 Player *player;
 Gun *curGun;
@@ -74,7 +77,10 @@ void freeArr()
 
 void startGame(User *user, Mix_Music *music)
 {
+    maxX -= 25;
+    maxY -= 3;
     freeArr();
+
     struct timeval tv;
     gettimeofday(&tv, NULL);
     milliseconds = tv.tv_sec * 1000LL + tv.tv_usec / 1000;
@@ -186,8 +192,28 @@ void startGame(User *user, Mix_Music *music)
     refresh();
     // breaking the game
     Mix_FreeMusic(music);
+    maxX += 25;
+    maxY += 3;
+
     return;
 };
+
+volatile int timer = 0;
+void showMessage(char *msg)
+{
+    timer = 0;
+    messageWin = newwin(3, maxX - 2, maxY, 0);
+    box(messageWin, 0, 0);
+    refresh();
+    wrefresh(messageWin);
+    mvwprintw(messageWin, 0, 1, "messages");
+    mvwprintw(messageWin, 1, 1, "                                                                                         ");
+    if (msg)
+    {
+        mvwprintw(messageWin, 1, 1, "%s", msg);
+    }
+    wrefresh(messageWin);
+}
 
 int inPassway(Passway **passways, int count, Point p)
 {
@@ -211,6 +237,9 @@ int inPassway(Passway **passways, int count, Point p)
 
 void resumeGame(User *user, Mix_Music *music)
 {
+    maxX -= 25;
+    maxY -= 3;
+
     freeArr();
     win_state = 0;
     struct timeval tv;
@@ -264,8 +293,6 @@ void resumeGame(User *user, Mix_Music *music)
     }
 
     game->player->level = game->currentLevel;
-    // mvprintw(1, 1, "passway index %d", game->player->passway->index);
-    // refresh();
     // initialize guns
     {
         player->guns[0] = (Gun *)malloc(sizeof(Gun));
@@ -353,6 +380,9 @@ void resumeGame(User *user, Mix_Music *music)
     // breaking the game
     Mix_FreeMusic(music);
     // pthread_join(damageThread, NULL);
+    maxX += 25;
+    maxY += 3;
+
     return;
 }
 
@@ -522,14 +552,14 @@ void createLevel(Level *level, int levelIndex)
             rooms[i]->enemyCount = 1;
 
             Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
-            enemy->type = 'S';
+            enemy->type = 'B';
             enemy->health = 300;
             enemy->damage = 3;
             rooms[i]->enemyCount = 1;
             rooms[i]->enemy = enemy;
             rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
             rooms[i]->enemy->cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
-            rooms[i]->enemy->isVisible = false;
+            rooms[i]->enemy->isVisible = true;
             rooms[i]->enemy->id = id++;
             rooms[i]->enemy->moves = 0;
             rooms[i]->enemy->canMove = true;
@@ -929,10 +959,15 @@ void *damagePlayer(void *args)
 {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     int counter = 0;
+    int counterShow = 0;
+
     while (1)
     {
         sleep(1);
         counter++;
+        counterShow++;
+        if (counterShow % 3 == 1)
+            showChar();
         if (counter >= damageTime)
         {
             (player)->health -= 5;
@@ -947,12 +982,55 @@ void *damagePlayer(void *args)
     pthread_exit(NULL);
 }
 
+void showChar()
+{
+    int s = 20;
+    int num = rand();
+    wattron(infoWin, COLOR_PAIR((num % 9) + 1));
+    mvwprintw(infoWin, s + 1, 5, "  ███████");
+    mvwprintw(infoWin, s + 2, 5, " █       █");
+    mvwprintw(infoWin, s + 3, 5, " █  ⚆ ⚆  █");
+    mvwprintw(infoWin, s + 4, 5, " █   ⎠   █");
+    mvwprintw(infoWin, s + 5, 5, "  ███████");
+    wattroff(infoWin, COLOR_PAIR((num % 9) + 1));
+    wrefresh(infoWin);
+}
+
 void showPlayeInfo(Player player)
 {
-    mvprintw(1, maxX / 2, "                                                                                                           ");
+    infoWin = newwin(39, 24, 1, maxX + 1);
+    box(infoWin, 0, 0);
     refresh();
-    mvprintw(1, maxX / 2, "Level : %d golds : %d foods : %d health : %d key : %d brokenKey : %d ", player.level + 1, player.gold, player.foodCount, player.health, player.acientKey, player.brokenAcientKey);
-    refresh();
+    wrefresh(infoWin);
+    mvwprintw(infoWin, 2, 2, "Level : %d", player.level + 1);
+    mvwprintw(infoWin, 4, 2, "Health ❤️ : %d    ", player.health);
+    mvwprintw(infoWin, 6, 2, "Foods 🌭 : %d", player.foodCount);
+    mvwprintw(infoWin, 8, 2, "Keys 🗝️ : %d", player.acientKey);
+    mvwprintw(infoWin, 10, 2, "Broken keys 🔐 : %d", player.brokenAcientKey);
+    char *gunString = malloc(100 * sizeof(char));
+    if (curGun->type == 'g')
+    {
+        gunString = "Mace 🔨";
+    }
+    else if (curGun->type == 'k')
+    {
+        gunString = "Dagger 🗡️";
+    }
+    else if (curGun->type == 'a')
+    {
+        gunString = "Magic wond 🪄";
+    }
+    else if (curGun->type == 't')
+    {
+        gunString = "Arrow ➳";
+    }
+    else if (curGun->type == 's')
+    {
+        gunString = "Sword ⚔️";
+    }
+    mvwprintw(infoWin, 12, 2, "Current gun 🛡️ :");
+    mvwprintw(infoWin, 13, 4, "%s", gunString);
+    wrefresh(infoWin);
 }
 
 void showLevel(Level *level)
@@ -1575,11 +1653,7 @@ void handleMove()
 
                 if (curGun->count == 0)
                 {
-                    mvprintw(1, 1, "You dont have enough gun");
-                    refresh();
-                    getchar();
-                    mvprintw(1, 1, "                              ");
-                    refresh();
+                    showMessage("You don't have enough guns.");
                     continue;
                 }
                 if (curGun->type == 'g')
@@ -1587,13 +1661,11 @@ void handleMove()
                     if (isNear(player->cord, enemy->cord))
                     {
                         enemy->health -= curGun->damage * player->power;
-                        mvprintw(1, 1, "Cool ! you hit the enemy ");
-                        refresh();
+                        showMessage("Cool ! you hit the enemy ");
                         // message for hitting enemy
                         if (enemy->health <= 0)
                         {
-                            mvprintw(1, 1, "You killed him !!!          ");
-                            refresh();
+                            showMessage("You killed him !!!          ");
                             player->enemyCount = 0;
                             player->enemies[0] = NULL;
                             enemy->isVisible = false;
@@ -1611,27 +1683,23 @@ void handleMove()
                     }
                     else
                     {
-                        mvprintw(1, 1, "Oh :( You missed to hit  ");
-                        refresh();
+                        showMessage("Oh :( You missed to hit  ");
                     }
                 }
                 else if (curGun->type == 'k')
                 {
-                    mvprintw(1, 1, "Choose a diretion");
-                    refresh();
+                    showMessage("Choose a diretion");
                     char ch = getchar();
                     if (ch == 's')
                     {
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
-                            refresh();
+                            showMessage("Cool ! you hit the enemy ");
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
-                                refresh();
+                                showMessage("You killed him !!!          ");
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
                                 enemy->isVisible = false;
@@ -1649,7 +1717,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1671,12 +1739,12 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1695,7 +1763,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1718,12 +1786,12 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1742,7 +1810,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1765,12 +1833,12 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1789,7 +1857,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1810,7 +1878,7 @@ void handleMove()
                 }
                 else if (curGun->type == 'a')
                 {
-                    mvprintw(1, 1, "Choose a diretion");
+                    showMessage("Choose a direction");
                     refresh();
                     char ch = getchar();
                     if (ch == 's')
@@ -1820,12 +1888,12 @@ void handleMove()
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
 
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1844,7 +1912,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1869,12 +1937,12 @@ void handleMove()
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
 
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1893,7 +1961,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1918,12 +1986,12 @@ void handleMove()
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
 
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1942,7 +2010,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -1966,12 +2034,12 @@ void handleMove()
                         {
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -1990,7 +2058,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -2011,7 +2079,7 @@ void handleMove()
                 }
                 else if (curGun->type == 't')
                 {
-                    mvprintw(1, 1, "Choose a diretion");
+                    showMessage("Choose a direction");
                     refresh();
                     char ch = getchar();
                     if (ch == 's')
@@ -2019,12 +2087,12 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -2043,7 +2111,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -2067,12 +2135,12 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -2091,7 +2159,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -2114,12 +2182,12 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -2138,7 +2206,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             curGun->count--;
                             if (player->room->guns == NULL)
                             {
@@ -2161,12 +2229,12 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
-                            mvprintw(1, 1, "Cool ! you hit the enemy ");
+                            showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
                             if (enemy->health <= 0)
                             {
-                                mvprintw(1, 1, "You killed him !!!          ");
+                                showMessage("You killed him !!!          ");
                                 refresh();
                                 player->enemyCount = 0;
                                 player->enemies[0] = NULL;
@@ -2185,7 +2253,7 @@ void handleMove()
                         }
                         else
                         {
-                            mvprintw(1, 1, "Oh :( You missed to hit  ");
+                            showMessage("Oh :( You missed to hit  ");
                             if (curGun)
                                 curGun->count--;
                             if (player->room->guns == NULL)
@@ -2209,12 +2277,12 @@ void handleMove()
                     if (isNear(player->cord, enemy->cord))
                     {
                         enemy->health -= curGun->damage * player->power;
-                        mvprintw(1, 1, "Cool ! you hit the enemy ");
+                        showMessage("Cool ! you hit the enemy ");
                         refresh();
                         // message for hitting enemy
                         if (enemy->health <= 0)
                         {
-                            mvprintw(1, 1, "You killed him !!!          ");
+                            showMessage("You killed him !!!");
                             refresh();
                             player->enemyCount = 0;
                             player->enemies[0] = NULL;
@@ -2233,7 +2301,7 @@ void handleMove()
                     }
                     else
                     {
-                        mvprintw(1, 1, "Oh :( You missed to hit  ");
+                        showMessage("Oh :( You missed to hit  ");
                         refresh();
                     }
                 }
@@ -2360,8 +2428,8 @@ void handleMove()
             wrefresh(menuWin);
             wattroff(menuWin, A_BLINK);
 
-            mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
-            wmove(menuWin, 3, 25);
+            mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
+            wmove(menuWin, 3, 20);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->foodCount, 0);
             struct timeval tv;
@@ -2447,8 +2515,8 @@ void handleMove()
             wrefresh(menuWin);
             wattroff(menuWin, A_BLINK);
 
-            mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
-            wmove(menuWin, 3, 25);
+            mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
+            wmove(menuWin, 3, 20);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->enchantCount, 0);
             if (player->enchants[highlight]->count)
@@ -2516,8 +2584,8 @@ void handleMove()
             wrefresh(menuWin);
             wattroff(menuWin, A_BLINK);
 
-            mvwprintw(menuWin, 2, 1, "----------------------------------------------------------------------");
-            wmove(menuWin, 3, 25);
+            mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
+            wmove(menuWin, 3, 20);
             wrefresh(menuWin);
             int highlight = handleMenuSelection(menuWin, menu, player->gunCount, 0);
             if (player->guns[highlight]->count > 0)
@@ -2720,6 +2788,8 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         if (!lastRoom)
         {
             lastRoom = 1;
+            player->enemyCount = 0;
+            player->enemies[0] = NULL;
         }
         else
         {
@@ -2740,8 +2810,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         curEnemy->isVisible = true;
         player->enemies[player->enemyCount++] = curEnemy;
         curEnemy = NULL;
-        mvprintw(1, 1, "An enemy is following you !");
-        refresh();
+        showMessage("An enemy is following you !");
         printRoom(player->room);
     }
     if (c == 'O')
@@ -2761,7 +2830,9 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
     {
         player->room->golds[goldIndex].isUsed = true;
         player->gold += player->room->golds[goldIndex].count;
-        mvprintw(1, 1, "Come on !! %d golds $_$", player->room->golds[goldIndex].count);
+        char *msg = malloc(100 * sizeof(char));
+        sprintf(msg, "Come on !! %d golds $_$", player->room->golds[goldIndex].count);
+        showMessage(msg);
         refresh();
         player->room->goldCount -= 1;
         mvprintw(y, x, "..");
@@ -2893,7 +2964,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 showLevel(game->levels[game->currentLevel]);
                 refresh();
                 curs_set(false);
-                mvprintw(1, 1, "You are imprisoned for 5 seconds !!");
+                showMessage("You are imprisoned for 5 seconds !!");
                 refresh();
                 sleep(5);
                 mvprintw(1, 1, "                                     ");
@@ -2909,7 +2980,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
         }
         else if (player->acientKey > 0)
         {
-            mvprintw(1, 1, "You can open the door using ancient key !! (press o)");
+            showMessage("You can open the door using ancient key !! (press o)");
             refresh();
             char ch = getchar();
             mvprintw(1, 1, "                                                     ");
@@ -2931,7 +3002,7 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                 }
                 else
                 {
-                    mvprintw(1, 1, "Oops , the key is broken now :(");
+                    showMessage("Oops , the key is broken now :(");
                     refresh();
                     player->acientKey -= 1;
                     player->brokenAcientKey += 1;
@@ -2941,7 +3012,6 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
                         player->acientKey += 1;
                     }
                     getchar();
-                    mvprintw(1, 1, "                                  ");
                     if (player->room->doors[0].type == 'h')
                     {
                         clear();
@@ -3226,12 +3296,9 @@ void printDoors(Room *room)
             Point p;
             p.y = room->doors[i].cord.y + 3;
             p.x = room->doors[i].cord.x + 1;
-            if (isInNightmare(p, player->cord))
-            {
-                attron(COLOR_PAIR(2));
-                mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-                attroff(COLOR_PAIR(2));
-            }
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            attroff(COLOR_PAIR(2));
         }
         else if (room->doors[i].type == 'h' && room->doors[1 - i].type != 's')
         {
@@ -3241,13 +3308,10 @@ void printDoors(Room *room)
             Point p;
             p.y = room->doors[i].cord.y + 3;
             p.x = room->doors[i].cord.x + 1;
-            if (isInNightmare(p, player->cord))
-            {
-                attron(COLOR_PAIR(2));
-                mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
-                mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
-                attroff(COLOR_PAIR(2));
-            }
+            attron(COLOR_PAIR(2));
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + 1, "&");
+            mvwprintw(screen, room->cord.y + 3, room->cord.x + room->width - 1, "&");
+            attroff(COLOR_PAIR(2));
         }
         else if (room->doors[i].type == 's')
         {
