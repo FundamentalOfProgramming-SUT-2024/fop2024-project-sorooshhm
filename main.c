@@ -546,14 +546,15 @@ int preStartMenu(char type)
                 mvwprintw(profileWin, 14, 15, "Gameplay : %lld min", user->gameplay / 60);
                 int s = 2;
                 wattron(profileWin, A_BLINK);
-                wattron(profileWin, COLOR_PAIR(2));
+                int num = rand() % 9;
+                wattron(profileWin, COLOR_PAIR(num));
                 mvwprintw(profileWin, s + 1, 55, "  ███████");
                 mvwprintw(profileWin, s + 2, 55, " █       █");
                 mvwprintw(profileWin, s + 3, 55, " █  ⚆ ⚆  █");
                 mvwprintw(profileWin, s + 4, 55, " █   ⎠   █");
                 mvwprintw(profileWin, s + 5, 55, "  ███████");
                 wattroff(profileWin, A_BLINK);
-                wattroff(profileWin, COLOR_PAIR(2));
+                wattroff(profileWin, COLOR_PAIR(num));
                 wrefresh(profileWin);
                 wrefresh(profileWin);
                 while (1)
