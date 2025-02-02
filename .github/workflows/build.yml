@@ -19,6 +19,7 @@ jobs:
           sudo apt-get install libpq-dev
   build:
     runs-on: ubuntu-22.04
+    needs : install
     steps:
       - uses: actions/checkout@v4
       - name: make
