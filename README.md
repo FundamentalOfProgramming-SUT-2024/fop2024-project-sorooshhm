@@ -9,4 +9,4 @@ https://github.com/FundamentalOfProgramming-SUT-2024/fundamentalofprogramming-su
 ![image](https://github.com/user-attachments/assets/10ebedfb-e00c-41ab-aa33-a73a41eb5380)
 
 # Game window
-![image](https://github.com/user-attachments/assets/deebac77-2efb-401d-a96f-d268455898a1)
+![image](https://github.com/user-attachments/assets/c32d5162-e210-4630-8c5b-6d59d6ead60e)
