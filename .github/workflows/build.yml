@@ -2,16 +2,25 @@ name: Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-22.04
+    needs: [clean]
     steps:
-    - uses: actions/checkout@v4
-    - name: make
-      run: make
+      - uses: actions/checkout@v4
+
+      - name: Install General
+        run:
+          sudo apt-get update \ sudo apt-get install libncurses-dev \ sudo apt-get install libsdl2-dev libsdl2-2.0-0 \
+          \ sudo apt-get install libpq-dev
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: make
+        run: make
