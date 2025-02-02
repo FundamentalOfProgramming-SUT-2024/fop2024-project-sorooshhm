@@ -10,7 +10,6 @@ jobs:
   install:
     name: Install Dependencies
     runs-on: ubuntu-22.04
-    needs: [clean]
     steps:
       - uses: actions/checkout@v4
 
