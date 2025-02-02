@@ -2575,7 +2575,7 @@ void handleMove()
 
                 char **menu = (char **)malloc(2 * sizeof(char *));
                 menu[0] = "Throwing weapons";
-                menu[1] = "Non-projectile weapons";
+                menu[1] = "Non-throwing weapons";
 
                 wattron(menuWin, A_BLINK);
                 mvwprintw(menuWin, 1, 25, "Gun menu");
@@ -2583,7 +2583,18 @@ void handleMove()
                 wattroff(menuWin, A_BLINK);
 
                 mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
-                wmove(menuWin, 3, 20);
+                mvwprintw(menuWin, 16, 4, "Guide for quick selecting : ");
+                mvwprintw(menuWin, 17, 1, "---------------------------------------------------------");
+                wattron(menuWin, COLOR_PAIR(1));
+                mvwprintw(menuWin, 18, 10, "] -> selecting mace");
+                mvwprintw(menuWin, 19, 10, "[ -> selecting dagger");
+                mvwprintw(menuWin, 20, 10, "p -> selecting magic wond");
+                mvwprintw(menuWin, 21, 10, "o -> selecting arrow");
+                mvwprintw(menuWin, 22, 10, "i -> selecting sword");
+                wattroff(menuWin, COLOR_PAIR(1));
+
+                wrefresh(menuWin);
+                wmove(menuWin, 3, 15);
                 wrefresh(menuWin);
                 int highlight = handleMenuSelection(menuWin, menu, 2, 1);
                 if (highlight == -1)
@@ -2602,45 +2613,142 @@ void handleMove()
                         menu[i - 1] = malloc(100 * sizeof(char));
                         if (player->guns[i]->type == 'k')
                         {
-                            sprintf(menu[i - 1], "Khanjar 🗡️  %d", player->guns[i]->count);
+                            sprintf(menu[i - 1], "Khanjar 🗡️  %d    ", player->guns[i]->count);
                         }
                         else if (player->guns[i]->type == 'a')
                         {
                             menu[i - 1] = malloc(100 * sizeof(char));
 
-                            sprintf(menu[i - 1], "Asa jadooyi 🪄  %d", player->guns[i]->count);
+                            sprintf(menu[i - 1], "Asa jadooyi 🪄  %d    ", player->guns[i]->count);
                         }
                         else if (player->guns[i]->type == 't')
                         {
                             menu[i - 1] = malloc(100 * sizeof(char));
 
-                            sprintf(menu[i - 1], "Tir ➳  %d", player->guns[i]->count);
+                            sprintf(menu[i - 1], "Tir ➳  %d    ", player->guns[i]->count);
                         }
                         if (curGun->type == player->guns[i]->type)
                         {
                             strcat(menu[i - 1], "   ✅");
                         }
                     }
-                    wmove(menuWin, 3, 20);
+                    wmove(menuWin, 3, 15);
                     wrefresh(menuWin);
-                    int choice = handleMenuSelection(menuWin, menu, 2, 1);
-                    if(choice != -1){
-                        if(choice)
+                    int choice = handleMenuSelection(menuWin, menu, 3, 1);
+                    if (choice != -1)
+                    {
+                        if (player->guns[choice + 1]->count > 0)
+                        {
+                            curGun = player->guns[choice + 1];
+                            char *msg = malloc(100 * sizeof(char));
+                            sprintf(msg, "Your current gun is %c", curGun->type);
+                            showMessage(msg);
+                        }
                     }
+                    free(menu);
                 }
                 else if (highlight == 1)
                 {
+                    char **menu = (char **)malloc(2 * sizeof(char *));
+                    menu[0] = malloc(100 * sizeof(char));
+                    menu[1] = malloc(100 * sizeof(char));
+                    sprintf(menu[0], "Gorz ⚒  %d      ", player->guns[0]->count);
+                    sprintf(menu[1], "Shamshir ⚔️  %d        ", player->guns[4]->count);
+                    if (curGun->type == 'g')
+                    {
+                        strcat(menu[0], "   ✅");
+                    }
+                    else if (curGun->type == 's')
+                    {
+                        strcat(menu[1], "   ✅");
+                    }
+                    wmove(menuWin, 3, 15);
+                    wrefresh(menuWin);
+                    int choice = handleMenuSelection(menuWin, menu, 2, 1);
+                    if (choice != -1)
+                    {
+                        if (choice == 0)
+                        {
+                            if (player->guns[0]->count > 0)
+                            {
+                                curGun = player->guns[0];
+                                char *msg = malloc(100 * sizeof(char));
+                                sprintf(msg, "Your current gun is %c", curGun->type);
+                                showMessage(msg);
+                            }
+                        }
+                        else if (choice == 1)
+                        {
+                            if (player->guns[4]->count > 0)
+                            {
+                                curGun = player->guns[4];
+                                char *msg = malloc(100 * sizeof(char));
+                                sprintf(msg, "Your current gun is %c", curGun->type);
+                                showMessage(msg);
+                            }
+                        }
+                    }
+                    free(menu);
                 }
-                if (player->guns[highlight]->count > 0)
-                {
-                    curGun = player->guns[highlight];
-                    mvprintw(1, 1, "Your current gun is %c", curGun->type);
-                    refresh();
-                    getchar();
-                    mvprintw(1, 1, "                               ");
-                    refresh();
-                }
+                mvwprintw(menuWin, 18, 15, "] -> selecting mace");
+                mvwprintw(menuWin, 19, 15, "[ -> selecting dagger");
+                mvwprintw(menuWin, 21, 15, "p -> selecting magic wond");
+                mvwprintw(menuWin, 22, 15, "o -> selecting arrow");
+                mvwprintw(menuWin, 23, 15, "i -> selecting sword");
+                wrefresh(menuWin);
                 usleep(200);
+            }
+        }
+        else if (c == ']')
+        {
+            curGun = player->guns[0];
+            char *msg = malloc(100 * sizeof(char));
+            sprintf(msg, "Your current gun is %c", curGun->type);
+            showMessage(msg);
+            showPlayeInfo(*player);
+        }
+        else if (c == '[')
+        {
+            if (player->guns[1]->count > 0)
+            {
+                curGun = player->guns[1];
+                char *msg = malloc(100 * sizeof(char));
+                sprintf(msg, "Your current gun is %c", curGun->type);
+                showMessage(msg);
+                showPlayeInfo(*player);
+            }
+        }
+        else if (c == 'p')
+        {
+            if (player->guns[2]->count > 0)
+            {
+                curGun = player->guns[2];
+                char *msg = malloc(100 * sizeof(char));
+                sprintf(msg, "Your current gun is %c", curGun->type);
+                showMessage(msg);
+                showPlayeInfo(*player);
+            }
+        }
+        else if (c == 'o')
+        {
+            if (player->guns[3]->count > 0)
+            {
+                curGun = player->guns[3];
+                char *msg = malloc(100 * sizeof(char));
+                sprintf(msg, "Your current gun is %c", curGun->type);
+                showMessage(msg);
+                showPlayeInfo(*player);
+            }
+        }
+        else if (c == 'i')
+        {
+            if (player->guns[4]->count > 0)
+            {
+                curGun = player->guns[4];
+                char *msg = malloc(100 * sizeof(char));
+                sprintf(msg, "Your current gun is %c", curGun->type);
+                showMessage(msg);
+                showPlayeInfo(*player);
             }
         }
         else if (c == 'f')
