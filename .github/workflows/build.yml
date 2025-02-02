@@ -14,8 +14,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install General
-        run:
-          sudo apt-get update ; sudo apt-get install libncurses-dev ; sudo apt-get install libsdl2-dev libsdl2-2.0-0 ;
+        run: |
+          sudo apt-get update 
+          sudo apt-get install libncurses-dev
+          sudo apt-get install libsdl2-dev
           sudo apt-get install libpq-dev
   build:
     runs-on: ubuntu-22.04
