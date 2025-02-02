@@ -15,8 +15,8 @@ jobs:
 
       - name: Install General
         run:
-          sudo apt-get update \ sudo apt-get install libncurses-dev \ sudo apt-get install libsdl2-dev libsdl2-2.0-0 \
-          \ sudo apt-get install libpq-dev
+          sudo apt-get update ; sudo apt-get install libncurses-dev ; sudo apt-get install libsdl2-dev libsdl2-2.0-0 ;
+          sudo apt-get install libpq-dev
   build:
     runs-on: ubuntu-22.04
     steps:
