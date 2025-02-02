@@ -21,6 +21,7 @@ typedef struct
     Setting setting;
 } User;
 
+
 char isAuthorized(User **);
 int getUserId();
 User *login(char *, char *, char ** , int);

@@ -19,6 +19,7 @@
 
 User *user;
 int maxY, maxX;
+PGconn *conn;
 
 int preStartMenu(char type);
 Mix_Music *playMusic(char *path);
@@ -45,6 +46,8 @@ int main()
     init_pair(10, COLOR_RED2, COLOR_BLACK);
 
     // noecho();
+    // connect to db
+    conn = connect_db();
     user = (User *)malloc(sizeof(User));
     cbreak();
     getmaxyx(stdscr, maxY, maxX);
@@ -182,7 +185,10 @@ int main()
             clear();
             refresh();
             if (user->isAuth)
-                updateUser(user);
+            {
+                // updateUser(user);
+                update_user(conn, *user);
+            }
         }
         if (choice == 1)
         {
@@ -192,7 +198,10 @@ int main()
             clear();
             refresh();
             if (user->isAuth)
-                updateUser(user);
+            {
+                // updateUser(user);
+                update_user(conn, *user);
+            }
         }
         else if (choice == 6)
         {
@@ -261,7 +270,8 @@ int preStartMenu(char type)
                 int count = 0;
                 int page = 0;
                 int num = 3;
-                User **users = find(&count);
+                // User **users = find(&count);
+                User **users = get_users(conn, &count);
                 int maxPage = count / num;
                 if (maxPage * num != count)
                 {
@@ -528,12 +538,23 @@ int preStartMenu(char type)
                 mvwprintw(profileWin, 2, 1, "----------------------------------------------------------------------");
 
                 wrefresh(profileWin);
-                mvwprintw(profileWin, 4, 20, "Username : %s", user->username);
-                mvwprintw(profileWin, 6, 20, "Email : %s", user->email);
-                mvwprintw(profileWin, 8, 20, "Games : %d", user->games);
-                mvwprintw(profileWin, 10, 20, "Golds : %d", user->golds);
-                mvwprintw(profileWin, 12, 20, "Score : %d", user->score);
-                mvwprintw(profileWin, 14, 20, "Gameplay : %lld min", user->gameplay / 60);
+                mvwprintw(profileWin, 4, 15, "Username : %s", user->username);
+                mvwprintw(profileWin, 6, 15, "Email : %s", user->email);
+                mvwprintw(profileWin, 8, 15, "Games : %d", user->games);
+                mvwprintw(profileWin, 10, 15, "Golds : %d", user->golds);
+                mvwprintw(profileWin, 12, 15, "Score : %d", user->score);
+                mvwprintw(profileWin, 14, 15, "Gameplay : %lld min", user->gameplay / 60);
+                int s = 2;
+                wattron(profileWin, A_BLINK);
+                wattron(profileWin, COLOR_PAIR(2));
+                mvwprintw(profileWin, s + 1, 55, "  ███████");
+                mvwprintw(profileWin, s + 2, 55, " █       █");
+                mvwprintw(profileWin, s + 3, 55, " █  ⚆ ⚆  █");
+                mvwprintw(profileWin, s + 4, 55, " █   ⎠   █");
+                mvwprintw(profileWin, s + 5, 55, "  ███████");
+                wattroff(profileWin, A_BLINK);
+                wattroff(profileWin, COLOR_PAIR(2));
+                wrefresh(profileWin);
                 wrefresh(profileWin);
                 while (1)
                 {

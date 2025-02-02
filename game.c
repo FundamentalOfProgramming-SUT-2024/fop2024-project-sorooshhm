@@ -254,6 +254,8 @@ void resumeGame(User *user, Mix_Music *music)
     int check = loadGame(game, user);
     if (!check)
     {
+        maxX += 25;
+        maxY += 3;
         return;
     }
     for (int i = game->currentLevel + 1; i < 4; i++)

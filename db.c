@@ -1,9 +1,152 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <postgresql/libpq-fe.h>
 #include "auth.h"
 #include "utils.h"
 #include "game.h"
+
+void finish_with_error(PGconn *conn)
+{
+    fprintf(stderr, "%s\n", PQerrorMessage(conn));
+    PQfinish(conn);
+    exit(1);
+}
+
+PGconn *connect_db()
+{
+    const char *conninfo = "dbname=rogue user=postgres password=soroosh2006 hostaddr=127.0.0.1 port=5432";
+    PGconn *conn = PQconnectdb(conninfo);
+
+    if (PQstatus(conn) != CONNECTION_OK)
+    {
+        finish_with_error(conn);
+    }
+
+    return conn;
+}
+
+void insert_user(PGconn *conn, User user)
+{
+    char query[512];
+    snprintf(query, sizeof(query), "INSERT INTO Users (password, username, email, games, golds, score, gameplay) VALUES (%llu, '%s', '%s', %d, %d, %d, %lld)",
+             user.password, user.username, user.email, user.games, user.golds, user.score, user.gameplay);
+
+    PGresult *res = PQexec(conn, query);
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        PQclear(res);
+        finish_with_error(conn);
+    }
+
+    PQclear(res);
+}
+
+void update_user(PGconn *conn, User user)
+{
+    char query[512];
+    snprintf(query, sizeof(query), "UPDATE Users SET password=%llu, games=%d, golds=%d, score=%d, gameplay=%lld WHERE username='%s' AND email='%s'",
+             user.password, user.games, user.golds, user.score, user.gameplay, user.username, user.email);
+
+    PGresult *res = PQexec(conn, query);
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        PQclear(res);
+        finish_with_error(conn);
+    }
+
+    PQclear(res);
+}
+
+User **get_users(PGconn *conn, int *count)
+{
+    PGresult *res = PQexec(conn, "SELECT password, username, email, games, golds, score, gameplay FROM Users");
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        PQclear(res);
+        finish_with_error(conn);
+    }
+
+    int rows = PQntuples(res);
+    User **users = (User **)malloc(rows * sizeof(User *));
+    for (int i = 0; i < rows; i++)
+    {
+        User *user = (User *)malloc(sizeof(User));
+        user->password = strtoull(PQgetvalue(res, 0, 0), NULL, 10);
+        user->username = (char *)malloc(100 * sizeof(char));
+        user->email = (char *)malloc(100 * sizeof(char));
+        sprintf(user->username, "%s", PQgetvalue(res, 0, 1));
+        sprintf(user->email, "%s", PQgetvalue(res, 0, 2));
+        user->games = atoi(PQgetvalue(res, 0, 3));
+        user->golds = atoi(PQgetvalue(res, 0, 4));
+        user->score = atoi(PQgetvalue(res, 0, 5));
+        user->gameplay = strtoll(PQgetvalue(res, 0, 6), NULL, 10);
+        users[i] = user;
+    }
+
+    PQclear(res);
+    *count = rows;
+    return users;
+}
+
+User *get_user_by_username(PGconn *conn, const char *username)
+{
+    char query[256];
+    snprintf(query, sizeof(query), "SELECT password, username, email, games, golds, score, gameplay FROM Users WHERE username='%s'", username);
+
+    PGresult *res = PQexec(conn, query);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        PQclear(res);
+        finish_with_error(conn);
+    }
+
+    int rows = PQntuples(res);
+    User *user = NULL;
+    if (rows > 0)
+    {
+        user = (User *)malloc(sizeof(User));
+        user->password = strtoull(PQgetvalue(res, 0, 0), NULL, 10);
+        user->username = (char *)malloc(100 * sizeof(char));
+        user->email = (char *)malloc(100 * sizeof(char));
+        sprintf(user->username, "%s", PQgetvalue(res, 0, 1));
+        sprintf(user->email, "%s", PQgetvalue(res, 0, 2));
+        user->games = atoi(PQgetvalue(res, 0, 3));
+        user->golds = atoi(PQgetvalue(res, 0, 4));
+        user->score = atoi(PQgetvalue(res, 0, 5));
+        user->gameplay = strtoll(PQgetvalue(res, 0, 6), NULL, 10);
+    }
+    else
+    {
+        printf("No user found with username '%s'\n", username);
+    }
+
+    PQclear(res);
+    return user;
+}
+
+int check_username_exists(PGconn *conn, const char *username)
+{
+    char query[256];
+    snprintf(query, sizeof(query), "SELECT COUNT(*) FROM Users WHERE username='%s'", username);
+
+    PGresult *res = PQexec(conn, query);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        PQclear(res);
+        finish_with_error(conn);
+    }
+
+    int exists = atoi(PQgetvalue(res, 0, 0));
+    PQclear(res);
+
+    return exists > 0;
+}
 
 User *findUser(char *username)
 {
@@ -338,7 +481,7 @@ int loadGame(Game *game, User *user)
     fread(&player->acientKey, sizeof(int), 1, file);
     fread(&player->brokenAcientKey, sizeof(int), 1, file);
     fread(&player->foodCount, sizeof(int), 1, file);
-    player->foods = (Food*)malloc(sizeof(Food) * 100);
+    player->foods = (Food *)malloc(sizeof(Food) * 100);
     fread(player->foods, sizeof(Food), player->foodCount, file);
 
     fread(&player->gunCount, sizeof(int), 1, file);

@@ -6,6 +6,8 @@
 #include "utils.h"
 #include "db.h"
 
+extern PGconn *conn;
+
 char isAuthorized(User **user)
 {
     FILE *fptr = fopen(".env", "r");
@@ -22,7 +24,10 @@ char isAuthorized(User **user)
         char username[100];
         fgets(username, 100, fptr);
         username[strlen(username) - 1] = '\0';
-        *user = findUser(username);
+        // *user = findUser(username);
+        (*user) = get_user_by_username(conn, username);
+        printf("%d" , (*user)->games);
+        
         (*user)->isAuth = true;
         (*user)->setting.color = 0;
         (*user)->setting.level = 1;
@@ -34,9 +39,10 @@ char isAuthorized(User **user)
 
 int getUserId() {};
 
-User *login(char *username, char *password, char **message , int forget)
+User *login(char *username, char *password, char **message, int forget)
 {
-    User *user = findUser(username);
+    // User *user = findUser(username);
+    User *user = get_user_by_username(conn, username);
     if (user == NULL)
     {
         *message = "Username is wrong";
@@ -61,7 +67,8 @@ User *login(char *username, char *password, char **message , int forget)
 
 User *registerUser(char *username, char *password, char *email, char **message)
 {
-    int check = userExixst(username);
+    // int check = userExixst(username);
+    int check = check_username_exists(conn, username);
     if (check)
     {
         *message = "This username is taken";
@@ -78,7 +85,8 @@ User *registerUser(char *username, char *password, char *email, char **message)
     (user)->setting.color = 0;
     (user)->setting.level = 1;
     (user)->setting.music = "./music/1.mp3";
-    insertUser(user);
+    // insertUser(user);
+    insert_user(conn, *user);
     FILE *envFile = fopen(".env", "w");
     char content[100] = "1\n";
     strcat(content, username);
