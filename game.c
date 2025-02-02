@@ -555,8 +555,8 @@ void createLevel(Level *level, int levelIndex)
 
             Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
             enemy->type = 'B';
-            enemy->health = 350;
-            enemy->damage = 3;
+            enemy->health = 450;
+            enemy->damage = 2;
             rooms[i]->enemyCount = 1;
             rooms[i]->enemy = enemy;
             rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
