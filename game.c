@@ -207,10 +207,10 @@ void showMessage(char *msg)
     refresh();
     wrefresh(messageWin);
     mvwprintw(messageWin, 0, 1, "messages");
-    mvwprintw(messageWin, 1, 1, "                                                                                         ");
+    mvwprintw(messageWin, 1, 2, "                                                                                         ");
     if (msg)
     {
-        mvwprintw(messageWin, 1, 1, "%s", msg);
+        mvwprintw(messageWin, 1, 2, "%s", msg);
     }
     wrefresh(messageWin);
 }
@@ -555,14 +555,14 @@ void createLevel(Level *level, int levelIndex)
 
             Enemy *enemy = (Enemy *)malloc(sizeof(Enemy));
             enemy->type = 'B';
-            enemy->health = 300;
+            enemy->health = 350;
             enemy->damage = 3;
             rooms[i]->enemyCount = 1;
             rooms[i]->enemy = enemy;
             rooms[i]->enemy->cord.x = randomNumber(rooms[i]->cord.x + 2, rooms[i]->cord.x + rooms[i]->width - 3);
             rooms[i]->enemy->cord.y = randomNumber(rooms[i]->cord.y + 3, rooms[i]->cord.y + rooms[i]->height - 4);
             rooms[i]->enemy->isVisible = true;
-            rooms[i]->enemy->id = id++;
+            rooms[i]->enemy->id = 89;
             rooms[i]->enemy->moves = 0;
             rooms[i]->enemy->canMove = true;
             rooms[i]->type = 'g';
@@ -1698,6 +1698,8 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             // message for hitting enemy
                             if (enemy->health <= 0)
@@ -1742,6 +1744,8 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1789,6 +1793,8 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1836,6 +1842,8 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1890,7 +1898,8 @@ void handleMove()
                         {
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
-
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1939,7 +1948,8 @@ void handleMove()
                         {
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
-
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -1988,7 +1998,8 @@ void handleMove()
                         {
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
-
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2037,6 +2048,8 @@ void handleMove()
                         {
                             enemy->health -= curGun->damage * player->power;
                             enemy->canMove = false;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2090,6 +2103,8 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2138,6 +2153,8 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2185,6 +2202,8 @@ void handleMove()
                         if (enemy->cord.y == player->cord.y && enemy->cord.x <= player->cord.x + 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2232,6 +2251,8 @@ void handleMove()
                         if (enemy->cord.x == player->cord.x && enemy->cord.y <= player->cord.y - 5)
                         {
                             enemy->health -= curGun->damage * player->power;
+                            if (curGun->count)
+                                curGun->count--;
                             showMessage("Cool ! you hit the enemy ");
                             refresh();
                             // message for hitting enemy
@@ -2547,64 +2568,80 @@ void handleMove()
             {
                 continue;
             }
-            WINDOW *menuWin = creaetMenuWindow(25, maxX / 2, maxY / 2 - 15, maxX / 4);
-
-            char **menu = (char **)malloc(player->gunCount * sizeof(char *));
-            for (int i = 0; i < 5; i++)
+            while (1)
             {
-                // if (!player.usedFood[i])
-                // {
-                menu[i] = malloc(100 * sizeof(char));
-                if (player->guns[i]->type == 'g')
-                {
-                    sprintf(menu[i], "Gorz ⚒  %d", player->guns[i]->count);
-                }
-                else if (player->guns[i]->type == 'k')
-                {
-                    sprintf(menu[i], "Khanjar 🗡️  %d", player->guns[i]->count);
-                }
-                else if (player->guns[i]->type == 'a')
-                {
-                    sprintf(menu[i], "Asa jadooyi 🪄  %d", player->guns[i]->count);
-                }
-                else if (player->guns[i]->type == 't')
-                {
-                    sprintf(menu[i], "Tir ➳  %d", player->guns[i]->count);
-                }
-                else
-                {
-                    sprintf(menu[i], "Shamshir ⚔️  %d", player->guns[i]->count);
-                }
-                if (curGun->type == player->guns[i]->type)
-                {
-                    strcat(menu[i], "   ✅");
-                }
-                // }
-            }
 
-            wattron(menuWin, A_BLINK);
-            mvwprintw(menuWin, 1, 25, "Gun menu");
-            wrefresh(menuWin);
-            wattroff(menuWin, A_BLINK);
+                WINDOW *menuWin = creaetMenuWindow(25, maxX / 2, maxY / 2 - 15, maxX / 4);
 
-            mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
-            wmove(menuWin, 3, 20);
-            wrefresh(menuWin);
-            int highlight = handleMenuSelection(menuWin, menu, player->gunCount, 0);
-            if (player->guns[highlight]->count > 0)
-            {
-                curGun = player->guns[highlight];
-                mvprintw(1, 1, "Your current gun is %c", curGun->type);
-                refresh();
-                getchar();
-                mvprintw(1, 1, "                               ");
-                refresh();
+                char **menu = (char **)malloc(2 * sizeof(char *));
+                menu[0] = "Throwing weapons";
+                menu[1] = "Non-projectile weapons";
+
+                wattron(menuWin, A_BLINK);
+                mvwprintw(menuWin, 1, 25, "Gun menu");
+                wrefresh(menuWin);
+                wattroff(menuWin, A_BLINK);
+
+                mvwprintw(menuWin, 2, 1, "---------------------------------------------------------");
+                wmove(menuWin, 3, 20);
+                wrefresh(menuWin);
+                int highlight = handleMenuSelection(menuWin, menu, 2, 1);
+                if (highlight == -1)
+                {
+                    wclear(menuWin);
+                    free(menu);
+                    clear();
+                    showLevel(level);
+                    break;
+                }
+                if (highlight == 0)
+                {
+                    char **menu = (char **)malloc(3 * sizeof(char *));
+                    for (int i = 1; i < 4; i++)
+                    {
+                        menu[i - 1] = malloc(100 * sizeof(char));
+                        if (player->guns[i]->type == 'k')
+                        {
+                            sprintf(menu[i - 1], "Khanjar 🗡️  %d", player->guns[i]->count);
+                        }
+                        else if (player->guns[i]->type == 'a')
+                        {
+                            menu[i - 1] = malloc(100 * sizeof(char));
+
+                            sprintf(menu[i - 1], "Asa jadooyi 🪄  %d", player->guns[i]->count);
+                        }
+                        else if (player->guns[i]->type == 't')
+                        {
+                            menu[i - 1] = malloc(100 * sizeof(char));
+
+                            sprintf(menu[i - 1], "Tir ➳  %d", player->guns[i]->count);
+                        }
+                        if (curGun->type == player->guns[i]->type)
+                        {
+                            strcat(menu[i - 1], "   ✅");
+                        }
+                    }
+                    wmove(menuWin, 3, 20);
+                    wrefresh(menuWin);
+                    int choice = handleMenuSelection(menuWin, menu, 2, 1);
+                    if(choice != -1){
+                        if(choice)
+                    }
+                }
+                else if (highlight == 1)
+                {
+                }
+                if (player->guns[highlight]->count > 0)
+                {
+                    curGun = player->guns[highlight];
+                    mvprintw(1, 1, "Your current gun is %c", curGun->type);
+                    refresh();
+                    getchar();
+                    mvprintw(1, 1, "                               ");
+                    refresh();
+                }
+                usleep(200);
             }
-            wclear(menuWin);
-            free(menu);
-            clear();
-            refresh();
-            showLevel(level);
         }
         else if (c == 'f')
         {
@@ -2793,6 +2830,13 @@ void movePlayer(Player *player, Room **rooms, Passway **passways, int roomsCount
             lastRoom = 1;
             player->enemyCount = 0;
             player->enemies[0] = NULL;
+            showMessage("You are in the last room (press Enter)");
+            getchar();
+            showMessage("This room has a lot of golds (press Enter)");
+            getchar();
+            showMessage("But , Big Boss (B) is chasing you (press Enter)");
+            getchar();
+            showMessage("You only win when you kill the Enemy");
         }
         else
         {
